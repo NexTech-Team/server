@@ -303,8 +303,7 @@ module.exports = {
       //   isApproved: true,
       //   userId: "18af99d7-bf05-439a-8267-ecf8f7d191e5",
       //   adminId: "27e8d738-d3a1-40b2-9ae9-2e5aa80b037f",
-      // },
-      // {
+      // }, // {
       //   id: "af1fd181-72a7-44ad-bs62-66eb21d03506",
       //   brand: "Toyota",
       //   model: "Highlander",
@@ -324,6 +323,27 @@ module.exports = {
       //   userId: "b8fd31d4-55ae-4eb2-9ec5-1f72dd98de8b",
       //   adminId: "f9b08cb9-4ec1-48e5-950b-73a3c5da94e4",
       // },
+
+      {
+        id: "af1fd181-72a7-44ad-bs62-66eb21cv3o15",
+        brand: "Audi",
+        model: "100",
+        capacity: 2200,
+        price: 19999.99,
+        location: "Colombo",
+        mileage: 8590.7,
+        fuelType: "Petrol",
+        imageUrl: "https://example.com/image.jpg",
+        postUrl: "https://example.com/post",
+        postedDate: "2024-05-01 12:00:00",
+        rank: 95,
+        source: "carseek",
+        transmission: "Automatic",
+        year: 2013,
+        isApproved: true,
+        userId: "b8fd31d4-55ae-4eb2-9ec5-1f72dd98de8b",
+        adminId: "f9b08cb9-4ec1-48e5-950b-73a3c5da94e4",
+      },
     ]);
     /**
      * Add seed commands here.

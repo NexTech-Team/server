@@ -5,31 +5,32 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
-const disctrictRouter = require("./routes/districts");
+const { sequelize } = require("./models");
+// const disctrictRouter = require("./routes/districts");
 
-const swaggerUi = require("swagger-ui-express");
-/**
- * Represents the Swagger file used for API documentation.
- * @type {object}
- */
-const swaggerFile = require("./swagger-output.json");
+// const swaggerUi = require("swagger-ui-express");
+// /**
+//  * Represents the Swagger file used for API documentation.
+//  * @type {object}
+//  */
+// const swaggerFile = require("./swagger-output.json");
 
 app.use("/api/advertisments", advertismentRouter);
-app.use("/api/districts", disctrictRouter);
+// app.use("/api/districts", disctrictRouter);
 
-// Routes using async/await with promises
-app.use("/api-doc", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+// // Routes using async/await with promises
+// app.use("/api-doc", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-// Database connection
-try {
-  await sequelize.authenticate();
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}
+(async () => {
+  try {
+    await sequelize.sync();
+    console.log("Database synced successfully");
+    app.listen(5000 || process.env.PORT, () => {
+      console.log("Server is running on port 5000");
+    });
+  } catch (err) {
+    console.error("Error syncing database:", err);
+  }
+})();
 
 module.exports = app;
