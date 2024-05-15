@@ -1,8 +1,32 @@
 const carService = require("../service/advertismentServices");
 
-const getBrands = async (req, res) => {
+async function getAll(req, res) {
+  const { page, size, filter, sortFilter } = req.query;
+
   try {
-    const brandData = await carService.getBrands();
+    const parsedFilter = filter ? JSON.parse(filter) : {};
+    const parsedSortFilter = sortFilter ? JSON.parse(sortFilter) : {};
+
+    const result = await carService.getAllCars(
+      page,
+      size,
+      parsedFilter,
+      parsedSortFilter
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({
+      message: "Failed to retrieve data",
+      error: error.message,
+    });
+  }
+}
+
+const getBrands = async (req, res) => {
+  const { page, size } = req.query;
+  try {
+    const brandData = await carService.getBrands(page, size);
     res.status(200).json(brandData);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -10,15 +34,20 @@ const getBrands = async (req, res) => {
 };
 
 const getModels = async (req, res) => {
+  const { page, size, filter } = req.query;
   try {
-    const modelData = await carService.getModels();
+    const parsedFilter = filter ? JSON.parse(filter) : {}; // Parse the filter if it exists
+    const modelData = await carService.getModels(page, size, parsedFilter);
+    console.log("Model Data:", modelData);
     res.status(200).json(modelData);
   } catch (error) {
+    console.error("Controller Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 module.exports = {
+  getAll,
   getBrands,
   getModels,
 };

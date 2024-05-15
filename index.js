@@ -1,36 +1,27 @@
-require("dotenv").config();
 const express = require("express");
+const cors = require("cors"); // Import the 'cors' package
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
 const { sequelize } = require("./models");
-// const disctrictRouter = require("./routes/districts");
 
-// const swaggerUi = require("swagger-ui-express");
-// /**
-//  * Represents the Swagger file used for API documentation.
-//  * @type {object}
-//  */
-// const swaggerFile = require("./swagger-output.json");
+app.use(cors()); // Enable CORS for all routes
 
-app.use("/api/advertisments", advertismentRouter);
-// app.use("/api/districts", disctrictRouter);
+app.use("/api/advertisments/", advertismentRouter);
 
-// // Routes using async/await with promises
-// app.use("/api-doc", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+// ... other route setups
 
 (async () => {
   try {
     await sequelize.sync();
     console.log("Database synced successfully");
-    app.listen(5000 || process.env.PORT, () => {
-      console.log("Server is running on port 5000");
+    app.listen(port, () => {
+      // Use the 'port' variable for the server to listen on
+      console.log(`Server is running on port ${port}`);
     });
   } catch (err) {
     console.error("Error syncing database:", err);
   }
 })();
-
-module.exports = app;
