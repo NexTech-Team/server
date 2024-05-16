@@ -38,10 +38,21 @@ const getModels = async (req, res) => {
   try {
     const parsedFilter = filter ? JSON.parse(filter) : {}; // Parse the filter if it exists
     const modelData = await carService.getModels(page, size, parsedFilter);
-    console.log("Model Data:", modelData);
+
     res.status(200).json(modelData);
   } catch (error) {
     console.error("Controller Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getFloatingData = async (req, res) => {
+  const { brand, model, year } = req.query;
+  try {
+    const floatingData = await carService.getFloatingData(brand, model, year);
+    console.log("Floating Data", floatingData);
+    res.status(200).json(floatingData);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
@@ -50,4 +61,5 @@ module.exports = {
   getAll,
   getBrands,
   getModels,
+  getFloatingData,
 };

@@ -114,8 +114,28 @@ const getModels = async (page, size, filter) => {
   }
 };
 
+const getFloatingData = async (brand, model, year) => {
+  try {
+    if (!brand || !model || !year) {
+      return res.status(400).json({
+        message: "Missing parameters: brand, model, and year are required.",
+      });
+    }
+    const data = await models.Car.findAll({
+      where: { brand: brand, model: model, year: year },
+    });
+
+    // Calculate average price using Array.reduce and arrow function
+    const totalPrices = data.reduce((sum, ad) => sum + ad.price, 0);
+    const averagePrice = totalPrices / data.length;
+
+    return averagePrice;
+  } catch (error) {}
+};
+
 module.exports = {
   getAllCars,
   getBrands,
   getModels,
+  getFloatingData,
 };
