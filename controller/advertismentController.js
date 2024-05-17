@@ -57,9 +57,23 @@ const getFloatingData = async (req, res) => {
   }
 };
 
+const getMarketData = async (req, res) => {
+  const { filter } = req.query;
+
+  try {
+    const parsedFilter = filter ? JSON.parse(filter) : {};
+    const marketData = await carService.getMarketData(parsedFilter);
+
+    res.status(200).json(marketData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAll,
   getBrands,
   getModels,
   getFloatingData,
+  getMarketData,
 };

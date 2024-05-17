@@ -132,10 +132,36 @@ const getFloatingData = async (brand, model, year) => {
     return averagePrice;
   } catch (error) {}
 };
+const getMarketData = async (filter) => {
+  console.log("Market Data Filter:", filter);
+
+  try {
+    const data = await models.Car.findAndCountAll({
+      where: filter,
+    });
+
+    const totalCars = data.count;
+    const totalPrice = data.rows.reduce((sum, ad) => sum + ad.price, 0);
+    const averagePrice = totalPrice / totalCars;
+    const highestPrice = Math.max(...data.rows.map((ad) => ad.price));
+    const lowestPrice = Math.min(...data.rows.map((ad) => ad.price));
+
+    return {
+      totalCars,
+      averagePrice,
+      highestPrice,
+      lowestPrice,
+    };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw new Error("Failed to retrieve data");
+  }
+};
 
 module.exports = {
   getAllCars,
   getBrands,
   getModels,
   getFloatingData,
+  getMarketData,
 };

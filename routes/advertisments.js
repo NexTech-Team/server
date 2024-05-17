@@ -7,5 +7,6 @@ router.get("/", advertismentController.getAll);
 router.get("/brands/data", advertismentController.getBrands);
 router.get("/models/data", advertismentController.getModels);
 router.get("/averagePrice/data", advertismentController.getFloatingData);
+router.get("/marketData/data", advertismentController.getMarketData);
 
 module.exports = router;
