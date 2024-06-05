@@ -48,36 +48,36 @@ module.exports = {
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
       },
     });
-
-    // // Adding a check constraint to ensure either email or phoneNumber is provided
-    // await queryInterface.sequelize.query(`
-    //   ALTER TABLE "Users"
-    //   ADD CONSTRAINT "email_or_phone_check"
-    //   CHECK (
-    //     ("email" IS NOT NULL AND LENGTH("email") > 0)
-    //     OR ("phoneNumber" IS NOT NULL AND LENGTH("phoneNumber") > 0)
-    //   );
-    // `);
-
-    // Adding indexes to email and phoneNumber for better query performance
-    await queryInterface.addIndex("Users", ["email"], {
-      unique: true,
-      where: {
-        email: {
-          [Sequelize.Op.ne]: null,
-        },
-      },
-    });
-
-    await queryInterface.addIndex("Users", ["phoneNumber"], {
-      unique: true,
-      where: {
-        phoneNumber: {
-          [Sequelize.Op.ne]: null,
-        },
-      },
-    });
   },
+  // // Adding a check constraint to ensure either email or phoneNumber is provided
+  // await queryInterface.sequelize.query(`
+  //   ALTER TABLE "Users"
+  //   ADD CONSTRAINT "email_or_phone_check"
+  //   CHECK (
+  //     ("email" IS NOT NULL AND LENGTH("email") > 0)
+  //     OR ("phoneNumber" IS NOT NULL AND LENGTH("phoneNumber") > 0)
+  //   );
+  // `);
+
+  // Adding indexes to email and phoneNumber for better query performance
+  //   await queryInterface.addIndex("Users", ["email"], {
+  //     unique: true,
+  //     where: {
+  //       email: {
+  //         [Sequelize.Op.ne]: null,
+  //       },
+  //     },
+  //   });
+
+  //   await queryInterface.addIndex("Users", ["phoneNumber"], {
+  //     unique: true,
+  //     where: {
+  //       phoneNumber: {
+  //         [Sequelize.Op.ne]: null,
+  //       },
+  //     },
+  //   });
+  // },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("Users");
   },
