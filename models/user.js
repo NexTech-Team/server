@@ -18,20 +18,23 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      firstName: DataTypes.STRING,
-      lastName: DataTypes.STRING,
+      name: DataTypes.STRING,
       email: {
         type: DataTypes.STRING,
         unique: true,
       },
       password: DataTypes.STRING,
-      phoneNumber: {
+      phone: {
         type: DataTypes.STRING,
         unique: true,
       },
       role: {
         type: DataTypes.ENUM("user", "admin"),
         defaultValue: "user",
+      },
+      status: {
+        type: DataTypes.ENUM("active", "inactive"),
+        defaultValue: "inactive",
       },
     },
 
