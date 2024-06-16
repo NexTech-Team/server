@@ -1,20 +1,22 @@
 const express = require("express");
-const authController = require("../controller/authController");
-const authService = require("../service/authServices");
-
 const router = express.Router();
+const authController = require("../controller/authController");
 
-router.post("/email-login", authController.emailLogin);
 router.post("/email-register", authController.emailRegister);
-router.post("/phone-login", authController.phoneLogin);
+router.post("/email-login", authController.emailLogin);
+router.post("/verify-email", authController.emailVerification);
+router.post(
+  "/resend-email-confirmation",
+  authController.resendEmailConfirmationLink
+);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.passwordReset);
+router.post("/phone-login", authController.phoneLogin); // Ensure this is the correct route
 router.post("/phone-register", authController.phoneRegister);
-// router.post("/auth/verification", authController.verification);
-// // router.post("/auth/forgot-password", authController.forgotPassword);
-// router.post("/auth/logout", authController.logout);
+router.post("/phone-verify", authController.phoneVerification);
 // router.post(
-//   "/auth/refresh-token",
-//   authService.verifyRefreshToken,
-//   authService.refreshTokens
+//   "/resend-phone-verification",
+//   authController.resentPhoneVerificationCode
 // );
 
 module.exports = router;

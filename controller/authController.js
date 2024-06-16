@@ -6,12 +6,10 @@ const { sendSMS } = require("../utils/sendSMS");
 const redisClient = require("../utils/redisClient");
 const dotenv = require("dotenv");
 const crypto = require("crypto");
-const { stat } = require("fs");
 
 dotenv.config();
 
 const generateTokens = (user) => {
-  //What are thingmust be sent as token and how it is work
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name, email: user.email },
     process.env.ACCESS_TOKEN_SECRET,
@@ -22,10 +20,9 @@ const generateTokens = (user) => {
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "3d" }
   );
-  redisClient.set(user.id.toString(), refreshToken);
-  if (process.env.REDIS_EXP) {
-    redisClient.expire(refreshToken, process.env.REDIS_EXP);
-  }
+  redisClient.set(user.id.toString(), refreshToken, {
+    EX: process.env.REDIS_EXP || 259200,
+  }); // Default to 3 days if not set
   return { accessToken, refreshToken };
 };
 
@@ -38,17 +35,16 @@ const generateVerificationCode = () => {
 const generateEmailToken = async (userId) => {
   try {
     const token = crypto.randomBytes(16).toString("hex");
-    await redisClient.set(token, userId.toString(), "EX", 300);
-    if (process.env.EMAIL_EXP) {
-      redisClient.expire(token, process.env.EMAIL_EXP);
-    }
+    await redisClient.set(token, userId.toString(), {
+      EX: process.env.EMAIL_EXP || 300,
+    }); // Default to 5 minutes if not set
     return token;
   } catch (error) {
     throw new Error("Error in generateEmailToken: " + error.message);
   }
 };
 
-const generateEmailLink = async (token, userId) => {
+const generateEmailLink = (token, userId) => {
   try {
     return `${process.env.AUTH_URL}/emailVerified/${userId}/${token}`;
   } catch (error) {
@@ -56,72 +52,57 @@ const generateEmailLink = async (token, userId) => {
   }
 };
 
-// exports.emailVerification = async (req, res) => {
-//   const { email, token } = req.body;
-//   if (!email || !token) {
-//     return res.status(400).json({ message: "Email and token are required" });
-//   }
-//   try {
-//     const userEmail = await redisClient.get(token);
-//     if (email !== userEmail) {
-//       return res.status(400).json({ message: "Invalid token" });
-//     }
-//     res.json({ message: "Email verified" });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error: " + error.message });
-//   }
-// };
-
+// Email Registration Handler
 const emailRegister = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
   if (!name || !email || !password || !confirmPassword) {
-    return res.status(400).json({
-      message: "Name, email, password, and confirm password are required",
-    });
+    return res.status(400).json({ message: "All fields are required" });
   }
   if (password !== confirmPassword) {
     return res.status(400).json({ message: "Passwords do not match" });
   }
   try {
     const existingUser = await User.findOne({ where: { email } });
-    if (existingUser && existingUser.status === "active") {
-      return res
-        .status(400)
-        .json({ message: "User already exists. Please log in." });
-    }
-    if (existingUser && existingUser.status === "inactive") {
-      return res
-        .status(400)
-        .json({ message: "User already exists but not verified" });
+    if (existingUser) {
+      if (existingUser.status === "active") {
+        return res
+          .status(400)
+          .json({ message: "User already exists. Please log in." });
+      } else {
+        return res
+          .status(400)
+          .json({ message: "User already exists but not verified" });
+      }
     }
 
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const newUser = await User.create({
       name,
       email,
-      password: bcrypt.hashSync(password, 10),
+      password: hashedPassword,
       status: "inactive",
     });
-    console.log("newUser: ", newUser.id);
-
-    const emailToken = await generateEmailToken(newUser.id);
-    const emailLink = await generateEmailLink(emailToken, newUser.id);
+    const code = generateVerificationCode();
+    // const emailToken = await generateEmailToken(newUser.id);
+    // const emailLink = generateEmailLink(emailToken, newUser.id);
 
     await sendEmail.sendActivationEmail(
       email,
-      emailLink,
+      code,
       newUser.name,
       "verifyEmail"
     );
 
-    return res.status(200).json({
-      message: "User created successfully. Verification email sent.",
-    });
+    return res
+      .status(200)
+      .json({ message: "User created successfully. Verification email sent." });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).json({ message: "Something went wrong: " + error.message });
   }
 };
 
+// Email Login Handler
 const emailLogin = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -141,33 +122,28 @@ const emailLogin = async (req, res) => {
     const tokens = generateTokens(user);
     return res
       .status(200)
-      .json({ tokens: tokens, message: "User logged in successfully" });
+      .json({ tokens, message: "User logged in successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
+// Email Verification Handler
 const emailVerification = async (req, res) => {
-  //TODO : Create Interface for after user click on email link
   const { id, token } = req.params;
-  console.log("id: ", id);
-  console.log("token: ", token);
   if (!id || !token) {
     return res.status(400).json({ message: "User ID and token are required" });
   }
   try {
     const userId = await redisClient.get(token);
-    console.log("userId: ", userId);
-    if (!userId && userId !== id) {
+    if (!userId || userId !== id) {
       return res
         .status(400)
         .json({ message: "Invalid token or your token is expired" });
     }
-    if (userId) {
-      const user = await User.findOne({ where: { userId } });
-      if (user.status === "active") {
-        return res.status(400).json({ message: "User already verified" });
-      }
+    const user = await User.findOne({ where: { id: userId } });
+    if (user.status === "active") {
+      return res.status(400).json({ message: "User already verified" });
     }
 
     await User.update({ status: "active" }, { where: { id } });
@@ -177,14 +153,15 @@ const emailVerification = async (req, res) => {
   }
 };
 
+// Resend Email Confirmation Link Handler
 const resendEmailConfirmationLink = async (req, res) => {
   const { id } = req.body;
   if (!id) {
-    return res.status(400).json({ message: "Email is required" });
+    return res.status(400).json({ message: "User ID is required" });
   }
   try {
     const emailToken = await generateEmailToken(id);
-    const emailLink = await generateEmailLink(emailToken, id);
+    const emailLink = generateEmailLink(emailToken, id);
     const user = await User.findOne({ where: { id } });
     await sendEmail.sendActivationEmail(
       user.email,
@@ -196,103 +173,11 @@ const resendEmailConfirmationLink = async (req, res) => {
       message: "A new verification email has been sent to your email address",
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Server error: " + error.message,
-    });
-  }
-};
-
-const phoneLogin = async (req, res) => {
-  const { phone, countryCode } = req.body;
-  console.log("phone: ", phone);
-  if (!phone || !countryCode) {
-    return res
-      .status(400)
-      .json({ message: "Phone and country code are required" });
-  }
-  try {
-    const user = await User.findOne({ where: { phone: phone } });
-
-    const code = generateVerificationCode();
-    await sendSMS(phone, countryCode, code);
-    await redisClient.set(phone, code.toString(), "EX", 300);
-
-    if (process.env.PHONE_EXP) {
-      redisClient.expire(phone, process.env.PHONE_EXP);
-    }
-    if (!user) {
-      const newUser = await User.create({ phone: phone });
-      // return res.status(400).json({ message: "User not found" });
-      //Send Request to Phone Register
-    }
-    //TODO: User to five intruction about code expire time
-    console.log("Phone login Done");
-
-    return res.status(200).json({ message: `Verification code sent ${phone}` });
-  } catch (error) {
-    console.log("Phone Error", error);
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
-const phoneRegister = async (req, res) => {
-  const { name, phone, countryCode } = req.body;
-  if (!name || !phone || !countryCode) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-  try {
-    if (await User.findOne({ where: { phone } })) {
-      return res.status(400).json({ message: "Phone number already exists" });
-    }
-    await User.create({ name, phone });
-
-    res.json({ message: "User Created Succsesfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error: " + error.message });
-  }
-};
-
-const phoneVerification = async (req, res) => {
-  const { phone, code } = req.body;
-  if (!phone || !code) {
-    return res.status(400).json({ message: "Phone and code are required" });
-  }
-  try {
-    const redisCode = await redisClient.get(phone);
-    if (!redisCode) {
-      return res.status(400).json({ message: "Code Expired" });
-    }
-    if (code !== redisCode) {
-      return res.status(400).json({ message: "Invalid code" });
-    }
-    const user = await User.findOne({ where: { phone } });
-    const tokens = generateTokens(user);
-    res.json(tokens);
-  } catch (error) {
-    res.status(500).json({ message: "Server error: " + error.message });
-  }
-};
-
-const resentPhoneVerificationCode = async (req, res) => {
-  const { phone, countryCode } = req.body;
-  if (!phone || !countryCode) {
-    return res
-      .status(400)
-      .json({ message: "Phone and country code are required" });
-  }
-  try {
-    const code = generateVerificationCode();
-    await sendSMS(phone, countryCode, code);
-    await redisClient.set(phone, code.toString(), "EX", 300);
-    if (process.env.PHONE_EXP) {
-      redisClient.expire(phone, process.env.PHONE_EXP);
-    }
-    res.json({ message: "User created successfully." });
-  } catch (error) {
-    res.status(500).json({ message: "Server error: " + error.message });
-  }
-};
-
+// Forgot Password Handler
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -303,33 +188,26 @@ const forgotPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-
-    // let payload = {
-    //   email: user.email,
-    //   id: user._id,
-    // };
     const token = jwt.sign(
       { email: user.email, id: user.id },
       process.env.RESET_PASSWORD_SECRET,
       { expiresIn: "15m" }
     );
-
-    //Create interface for user to reset password
     const passwordResetURL = `${process.env.AUTH_URL}/resetPassword/${user.id}/${token}`;
 
-    await emailService.sendActivationEmail(
+    await sendEmail.sendActivationEmail(
       user.email,
       passwordResetURL,
-      user.first_name,
+      user.name,
       "resetPassword"
     );
-    await redisClient.set(email, code.toString(), "EX", 300);
-    res.json({ message: "Verification code sent" });
+    res.json({ message: "Password reset email sent" });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
+// Password Reset Handler
 const passwordReset = async (req, res) => {
   const { id, token, password, confirmPassword } = req.body;
   if (!id || !token || !password || !confirmPassword) {
@@ -345,8 +223,7 @@ const passwordReset = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-    const secret = process.env.RESET_PASSWORD_SECRET;
-    const payload = jwt.verify(token, secret);
+    const payload = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
     if (payload.id !== id) {
       return res.status(400).json({ message: "Invalid token" });
     }
@@ -360,31 +237,131 @@ const passwordReset = async (req, res) => {
   }
 };
 
-// exports.logout = async (req, res) => {
-//   const { userId } = req.body;
-//   if (!userId) {
-//     return res.status(400).json({ message: "User ID is required" });
-//   }
-//   try {
-//     await redisClient.del(userId.toString());
-//     res.json({ message: "Logged out" });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error: " + error.message });
-//   }
-// };
+// Phone Login Handler
+const phoneLogin = async (req, res) => {
+  const { phone, countryCode } = req.body;
+  if (!phone || !countryCode) {
+    return res
+      .status(400)
+      .json({ message: "Phone and country code are required" });
+  }
+  try {
+    const user = await User.findOne({ where: { phone } });
+    if (!user) {
+      return res.json({ message: "User not active, please register first" });
+    }
 
+    const code = generateVerificationCode();
+    console.log("Verification code: ", code);
+    await sendSMS(phone, countryCode, code);
+    await redisClient.set(phone, code.toString(), { EX: 300 });
+    return res
+      .status(200)
+      .json({ message: `Verification code sent to ${phone}` });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+};
+
+// Phone Registration Handler
+const phoneRegister = async (req, res) => {
+  console.log(req.body);
+  const { phone, name, countryCode } = req.body;
+  if (!phone || !name || !countryCode) {
+    return res
+      .status(400)
+      .json({ message: "Phone, name, and country code are required" });
+  }
+  try {
+    const code = generateVerificationCode();
+    console.log("Verification code: ", code);
+    await sendSMS(phone, countryCode, code);
+    await redisClient.set(phone, code.toString(), { EX: 300 });
+
+    const user = await User.create({
+      phone,
+      name,
+      status: "inactive",
+    });
+
+    return res.status(200).json({ message: "User Register Successfully!" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+};
+
+// Phone Verification Handler
+const phoneVerification = async (req, res) => {
+  console.log(req.body);
+  const { phoneNumber: phone, code } = req.body;
+  if (!phone || !code) {
+    return res.status(400).json({ message: "Phone and code are required" });
+  }
+  try {
+    const storedCode = await redisClient.get(phone);
+    console.log("Stored code: ", storedCode);
+
+    if (storedCode !== code) {
+      return res.status(202).json({
+        message: "Invalid verification code,Please recheck again!",
+      });
+    }
+    if (!storedCode) {
+      return res.status(202).json({
+        message: "Verification code expired, Please request a new one!",
+      });
+    }
+
+    // Delete the code from redis
+    await redisClient.del(phone);
+
+    // Check if user exists and is inactive
+    let user = await User.findOne({ where: { phone } });
+    console.log(user);
+    if (user && user.status === "inactive") {
+      await User.update({ status: "active" }, { where: { phone } });
+    }
+
+    // Generate tokens
+    const tokens = generateTokens(user);
+    return res
+      .status(200)
+      .json({ tokens: tokens, message: "Phone verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+};
+
+// Resend Phone Verification Code Handler
+const resendPhoneVerificationCode = async (req, res) => {
+  const { phone, countryCode } = req.body;
+  if (!phone || !countryCode) {
+    return res
+      .status(400)
+      .json({ message: "Phone and country code are required" });
+  }
+  try {
+    const code = generateVerificationCode();
+    await sendSMS(phone, countryCode, code);
+    await redisClient.set(phone, code.toString(), { EX: 300 });
+    return res
+      .status(200)
+      .json({ message: `Verification code sent to ${phone}` });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
+  }
+};
+
+// Export all handlers
 module.exports = {
   emailRegister,
   emailLogin,
   emailVerification,
   resendEmailConfirmationLink,
   forgotPassword,
+  passwordReset,
   phoneLogin,
   phoneRegister,
-  resentPhoneVerificationCode,
   phoneVerification,
-  passwordReset,
-
-  // forgotPassword,
-  // logout,
+  resendPhoneVerificationCode,
 };
