@@ -11,14 +11,14 @@ dotenv.config();
 
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
-    { id: user.id, role: user.role, name: user.name, email: user.email },
+    { id: user.id, role: user.role, name: user.name },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
   const refreshToken = jwt.sign(
-    { id: user.id, role: user.role, name: user.name, email: user.email },
+    { id: user.id },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "3d" }
+    { expiresIn: "7d" }
   );
   redisClient.set(user.id.toString(), refreshToken, {
     EX: process.env.REDIS_EXP || 259200,
@@ -65,13 +65,9 @@ const emailRegister = async (req, res) => {
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       if (existingUser.status === "active") {
-        return res
-          .status(400)
-          .json({ message: "User already exists. Please log in." });
+        return res.json({ message: "User already exists, Please log in." });
       } else {
-        return res
-          .status(400)
-          .json({ message: "User already exists but not verified" });
+        return res.json({ message: "User already exists but not verified" });
       }
     }
 
@@ -83,6 +79,7 @@ const emailRegister = async (req, res) => {
       status: "inactive",
     });
     const code = generateVerificationCode();
+    await redisClient.set(email, code.toString(), { EX: 300 });
     // const emailToken = await generateEmailToken(newUser.id);
     // const emailLink = generateEmailLink(emailToken, newUser.id);
 
@@ -114,15 +111,24 @@ const emailLogin = async (req, res) => {
       return res.status(400).json({ message: "User not found." });
     }
     if (user.status === "inactive") {
-      return res.status(400).json({ message: "User not verified" });
+      return res
+        .status(400)
+        .json({ message: "User already exists but not verified" });
     }
     if (!bcrypt.compareSync(password, user.password)) {
       return res.status(400).json({ message: "Invalid password" });
     }
-    const tokens = generateTokens(user);
-    return res
-      .status(200)
-      .json({ tokens, message: "User logged in successfully" });
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    // Create secure cookie with refresh token
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true, //accessible only by web server
+      secure: true, //https
+      sameSite: "None", //cross-site cookie
+      maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
+    });
+
+    res.json({ accessToken, message: "User logged in successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
@@ -130,43 +136,60 @@ const emailLogin = async (req, res) => {
 
 // Email Verification Handler
 const emailVerification = async (req, res) => {
-  const { id, token } = req.params;
-  if (!id || !token) {
-    return res.status(400).json({ message: "User ID and token are required" });
+  const { email, code } = req.params;
+  if (!email || !code) {
+    return res
+      .status(400)
+      .json({ message: "User email and code are required" });
   }
   try {
-    const userId = await redisClient.get(token);
-    if (!userId || userId !== id) {
-      return res
-        .status(400)
-        .json({ message: "Invalid token or your token is expired" });
+    const storedCode = await redisClient.get(email);
+    if (!storedCode) {
+      return res.json({ message: "Your verification code is expired" });
     }
-    const user = await User.findOne({ where: { id: userId } });
+    if (storedCode !== code) {
+      return res.json({ message: "Invalid verification code" });
+    }
+    const user = await User.findOne({ where: { email: email } });
     if (user.status === "active") {
-      return res.status(400).json({ message: "User already verified" });
+      return res.json({ message: "User already exists, Please log in." });
     }
 
-    await User.update({ status: "active" }, { where: { id } });
-    res.json({ message: "Email verified" });
+    await User.update({ status: "active" }, { where: { email } });
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    // Create secure cookie with refresh token
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true, //accessible only by web server
+      secure: true, //https
+      sameSite: "None", //cross-site cookie
+      maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
+    });
+
+    res.json({ accessToken, message: "Email verified successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
-// Resend Email Confirmation Link Handler
-const resendEmailConfirmationLink = async (req, res) => {
-  const { id } = req.body;
-  if (!id) {
+// Resend Email Verification Code Handler
+const resendEmailVerificationCode = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
     return res.status(400).json({ message: "User ID is required" });
   }
   try {
-    const emailToken = await generateEmailToken(id);
-    const emailLink = generateEmailLink(emailToken, id);
-    const user = await User.findOne({ where: { id } });
+    const newUser = await User.findOne({ where: { email } });
+    if (!newUser) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    const code = generateVerificationCode();
+    await redisClient.set(email, code.toString(), { EX: 300 });
+
     await sendEmail.sendActivationEmail(
-      user.email,
-      emailLink,
-      user.name,
+      email,
+      code,
+      newUser.name,
       "verifyEmail"
     );
     res.json({
@@ -302,12 +325,12 @@ const phoneVerification = async (req, res) => {
     console.log("Stored code: ", storedCode);
 
     if (storedCode !== code) {
-      return res.status(202).json({
+      return res.json({
         message: "Invalid verification code,Please recheck again!",
       });
     }
     if (!storedCode) {
-      return res.status(202).json({
+      return res.json({
         message: "Verification code expired, Please request a new one!",
       });
     }
@@ -321,12 +344,18 @@ const phoneVerification = async (req, res) => {
     if (user && user.status === "inactive") {
       await User.update({ status: "active" }, { where: { phone } });
     }
+    //Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user);
 
-    // Generate tokens
-    const tokens = generateTokens(user);
-    return res
-      .status(200)
-      .json({ tokens: tokens, message: "Phone verified successfully" });
+    // Create secure cookie with refresh token
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true, //accessible only by web server
+      secure: true, //https
+      sameSite: "None", //cross-site cookie
+      maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
+    });
+
+    res.json({ accessToken, message: "Phone verified successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error: " + error.message });
   }
@@ -352,16 +381,64 @@ const resendPhoneVerificationCode = async (req, res) => {
   }
 };
 
+//Refresh Token Handler
+const refresh = (req, res) => {
+  const cookies = req.cookies;
+
+  if (!cookies?.jwt) return res.status(401).json({ message: "Unauthorized" });
+
+  const refreshToken = cookies.jwt;
+
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    asyncHandler(async (err, decoded) => {
+      if (err) return res.status(403).json({ message: "Forbidden" });
+
+      const foundUser = await User.findOne({
+        username: decoded.username,
+      }).exec();
+
+      if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
+
+      const accessToken = jwt.sign(
+        {
+          UserInfo: {
+            username: foundUser.username,
+            roles: foundUser.roles,
+          },
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "15m" }
+      );
+
+      res.json({ accessToken });
+    })
+  );
+};
+
+// @desc Logout
+// @route POST /auth/logout
+// @access Public - just to clear cookie if exists
+const logout = (req, res) => {
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(204); //No content
+  res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
+  res.json({ message: "Cookie cleared" });
+};
+
 // Export all handlers
 module.exports = {
   emailRegister,
   emailLogin,
   emailVerification,
-  resendEmailConfirmationLink,
+  resendEmailVerificationCode,
   forgotPassword,
   passwordReset,
   phoneLogin,
   phoneRegister,
   phoneVerification,
   resendPhoneVerificationCode,
+  refresh,
+  logout,
 };
