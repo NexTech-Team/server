@@ -1,35 +1,42 @@
-require("dotenv").config();
 const express = require("express");
-
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+require("./utils/redisClient");
 const app = express();
 const port = process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
-const disctrictRouter = require("./routes/districts");
+const authRouter = require("./routes/authRoute");
+const userRouter = require("./routes/userRoute");
+const postAdsRoute = require("./routes/postAdsRoute");
+const { sequelize } = require("./models");
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use("/uploads", express.static("uploads"));
 
-const swaggerUi = require("swagger-ui-express");
-/**
- * Represents the Swagger file used for API documentation.
- * @type {object}
- */
-const swaggerFile = require("./swagger-output.json");
+// Routes
+app.use("/api", postAdsRoute);
+app.use("/api/advertisments/", advertismentRouter);
+app.use("/api/auth/", authRouter);
+app.use("/api/user/", userRouter);
 
-app.use("/api/advertisments", advertismentRouter);
-app.use("/api/districts", disctrictRouter);
-
-// Routes using async/await with promises
-app.use("/api-doc", swaggerUi.serve, swaggerUi.setup(swaggerFile));
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-// Database connection
-try {
-  await sequelize.authenticate();
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}
-
-module.exports = app;
+(async () => {
+  try {
+    await sequelize.sync();
+    console.log("Database synced successfully");
+    app.listen(port, () => {
+      // Use the 'port' variable for the server to listen on
+      console.log(`Server is running on port ${port}`);
+    });
+  } catch (err) {
+    console.error("Error syncing database:", err);
+  }
+})();
