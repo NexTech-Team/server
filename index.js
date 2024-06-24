@@ -7,7 +7,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
-const userRouter = require("./routes/authRoute");
+const authRouter = require("./routes/authRoute");
+const userRouter = require("./routes/userRoute");
+const postAdsRoute = require("./routes/postAdsRoute");
 const { sequelize } = require("./models");
 app.use(
   cors({
@@ -18,9 +20,13 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use("/uploads", express.static("uploads"));
 
+// Routes
+app.use("/api", postAdsRoute);
 app.use("/api/advertisments/", advertismentRouter);
-app.use("/auth/", userRouter);
+app.use("/api/auth/", authRouter);
+app.use("/api/user/", userRouter);
 
 (async () => {
   try {

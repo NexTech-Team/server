@@ -1,35 +1,67 @@
 const { User } = require("../models");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-exports.getUser = async (req, res) => {
-  const { id } = req.params;
-  const user = await User.findByPk(id);
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
+const getUserProfile = async (req, res) => {
+  try {
+    console.log("User ", req.id);
+    const user = await User.findByPk(req.id, {
+      attributes: ["name", "email", "phone", "role"],
+    });
+    console.log("User profile", user);
+    res.json(user);
+  } catch (error) {
+    console.error("Failed to fetch user profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
-  res.json(user);
 };
 
-exports.updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { firstName, lastName, email, phone } = req.body;
-  const user = await User.findByPk(id);
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
+const updateUserProfile = async (req, res) => {
+  console.log("Update profile", req.body);
+  const { name, email, phone } = req.body;
+  try {
+    const user = await User.findByPk(req.id);
+    user.name = name;
+    user.email = email;
+    user.phone = phone;
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    console.error("Failed to update user profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
-  user.firstName = firstName;
-  user.lastName = lastName;
-  user.email = email;
-  user.phone = phone;
-  await user.save();
-  res.json(user);
 };
 
-exports.deleteUser = async (req, res) => {
-  const { id } = req.params;
-  const user = await User.findByPk(id);
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
+const changeUserPassword = async (req, res) => {
+  console.log("Change password", req.body);
+  console.log("User", req.id);
+  const { newPassword } = req.body;
+  try {
+    const user = await User.findByPk(req.id);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Failed to change password:", error);
+    res.status(500).json({ message: "Server error" });
   }
-  await user.destroy();
-  res.json({ message: "User deleted" });
+};
+
+const deleteUserProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.id);
+    await user.destroy();
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Failed to delete user profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {
+  getUserProfile,
+  updateUserProfile,
+  changeUserPassword,
+  deleteUserProfile,
 };

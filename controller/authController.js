@@ -1,3 +1,4 @@
+// const express = require('express');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../models");
@@ -5,11 +6,19 @@ const sendEmail = require("../utils/sendEmail");
 const { sendSMS } = require("../utils/sendSMS");
 const redisClient = require("../utils/redisClient");
 const dotenv = require("dotenv");
-const crypto = require("crypto");
 const asyncHandler = require("express-async-handler");
 
 dotenv.config();
 
+// Cookie settings for different environments
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", // secure only in production
+  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // SameSite policy
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refreshToken
+};
+
+// Generate Tokens
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name },
@@ -19,20 +28,22 @@ const generateTokens = (user) => {
   const refreshToken = jwt.sign(
     { id: user.id },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "30d" } // 30 days
   );
   redisClient.set(user.id.toString(), refreshToken, {
-    EX: process.env.REDIS_EXP || 259200, // Default to 3 days if not set
+    EX: 2592000, // 30 days in seconds
   });
   return { accessToken, refreshToken };
 };
 
+// Generate Verification Code
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000)
     .toString()
     .padStart(6, "0");
 };
 
+// Email Registration
 const emailRegister = asyncHandler(async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
   if (!name || !email || !password || !confirmPassword) {
@@ -50,7 +61,6 @@ const emailRegister = asyncHandler(async (req, res) => {
           : "User already exists but not verified",
     });
   }
-
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await User.create({
     name,
@@ -59,7 +69,7 @@ const emailRegister = asyncHandler(async (req, res) => {
     status: "inactive",
   });
   const code = generateVerificationCode();
-  await redisClient.set(email, code.toString(), { EX: 300 });
+  await redisClient.set(email, code.toString(), { EX: 300 }); // 5 minutes expiration
 
   await sendEmail.sendActivationEmail(email, code, newUser.name, "verifyEmail");
 
@@ -68,6 +78,7 @@ const emailRegister = asyncHandler(async (req, res) => {
   });
 });
 
+// Email Login
 const emailLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -75,10 +86,14 @@ const emailLogin = asyncHandler(async (req, res) => {
   }
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    return res.status(400).json({ message: "User not found." });
+    return res
+      .status(400)
+      .json({ message: "User not found. Please register first" });
   }
   if (user.status === "inactive") {
-    return res.status(400).json({ message: "User not verified" });
+    return res
+      .status(400)
+      .json({ message: "User not verified. Please verify first" });
   }
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
@@ -86,29 +101,27 @@ const emailLogin = asyncHandler(async (req, res) => {
   }
   const { accessToken, refreshToken } = generateTokens(user);
 
-  res.cookie("jwt", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("jwt", refreshToken, cookieOptions);
 
   res.json({ accessToken, message: "User logged in successfully" });
 });
 
+// Email Verification
 const emailVerification = asyncHandler(async (req, res) => {
-  const { email, code } = req.params;
+  const { email, code } = req.body;
   if (!email || !code) {
     return res.status(400).json({ message: "Email and code are required" });
   }
   const storedCode = await redisClient.get(email);
   if (!storedCode) {
-    return res.status(400).json({ message: "Verification code expired" });
+    return res.status(400).json({
+      message: "Verification code expired, please click resend otp button",
+    });
   }
   if (storedCode !== code) {
     return res.status(400).json({ message: "Invalid verification code" });
   }
-  redisClient.del(email); // Delete the key after successful verification
+  await redisClient.del(email); // Delete the key after successful verification
   const user = await User.findOne({ where: { email } });
   if (user.status === "active") {
     return res.status(400).json({ message: "User already verified" });
@@ -116,16 +129,12 @@ const emailVerification = asyncHandler(async (req, res) => {
   await User.update({ status: "active" }, { where: { email } });
   const { accessToken, refreshToken } = generateTokens(user);
 
-  res.cookie("jwt", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("jwt", refreshToken, cookieOptions);
 
   res.json({ accessToken, message: "Email verified successfully" });
 });
 
+// Resend Email Verification Code
 const resendEmailVerificationCode = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -136,15 +145,14 @@ const resendEmailVerificationCode = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
   const code = generateVerificationCode();
-  await redisClient.set(email, code.toString(), { EX: 300 });
+  await redisClient.set(email, code.toString(), { EX: 300 }); // 5 minutes expiration
 
   await sendEmail.sendActivationEmail(email, code, user.name, "verifyEmail");
 
-  res.status(200).json({
-    message: "Verification email sent",
-  });
+  res.status(200).json({ message: "Verification email sent" });
 });
 
+// Forgot Password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -171,6 +179,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Password reset email sent" });
 });
 
+// Password Reset
 const passwordReset = asyncHandler(async (req, res) => {
   const { id, token, password, confirmPassword } = req.body;
   if (!id || !token || !password || !confirmPassword) {
@@ -186,11 +195,12 @@ const passwordReset = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
   const payload = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
-  if (payload.id !== id) {
+  if (payload.id !== user.id) {
     return res.status(400).json({ message: "Invalid token" });
   }
   const hashedPassword = await bcrypt.hash(password, 10);
   await User.update({ password: hashedPassword }, { where: { id } });
+
   res.status(200).json({ message: "Password reset successfully" });
 });
 
@@ -208,6 +218,7 @@ const phoneLogin = asyncHandler(async (req, res) => {
       .json({ message: "User not found, please register first" });
   }
   const code = generateVerificationCode();
+  console.log("Verification Code: ", code);
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
   res.status(200).json({ message: `Verification code sent to ${phone}` });
@@ -221,6 +232,7 @@ const phoneRegister = asyncHandler(async (req, res) => {
       .json({ message: "Phone, name, and country code are required" });
   }
   const code = generateVerificationCode();
+  console.log("Verification Code: ", code);
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
 
@@ -258,14 +270,9 @@ const phoneVerification = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } = generateTokens(user);
 
-  res.cookie("jwt", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("jwt", refreshToken, cookieOptions);
 
-  res.json({ user, accessToken, message: "Phone verified successfully" });
+  res.json({ accessToken, message: "Phone verified successfully" });
 });
 
 const resendPhoneVerificationCode = asyncHandler(async (req, res) => {
