@@ -13,8 +13,11 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Run migrations and seeders
-RUN npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all
+# Copy the config directory
+COPY config ./config
+
+# Run migrations
+RUN npx sequelize-cli db:migrate
 
 # Expose the port
 EXPOSE 5000
