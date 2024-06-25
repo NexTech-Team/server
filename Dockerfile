@@ -16,9 +16,6 @@ COPY . .
 # Copy the config directory
 COPY config ./config
 
-# Run migrations
-RUN npx sequelize-cli db:migrate
-
 # Expose the port
 EXPOSE 5000
 
