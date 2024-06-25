@@ -1,0 +1,36 @@
+name: Deploy Backend App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: carseek.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t carseek-backend-app .
+
+      - name: Tag Docker image
+        run: docker tag carseek-backend-app carseek.azurecr.io/carseek-backend-app:latest
+
+      - name: Push Docker image
+        run: docker push carseek.azurecr.io/carseek-backend-app:latest
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: carseek-server-app
+          images: carseek.azurecr.io/carseek-backend-app:latest
