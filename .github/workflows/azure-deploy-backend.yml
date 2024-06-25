@@ -28,9 +28,3 @@ jobs:
 
       - name: Push Docker image
         run: docker push carseek.azurecr.io/carseek-backend-app:latest
-
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: carseek-server-app
-          images: carseek.azurecr.io/carseek-backend-app:latest
