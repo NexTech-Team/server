@@ -18,7 +18,7 @@ const port = process.env.PORT || 5000;
 const advertismentRouter = require("./routes/advertisments");
 const authRouter = require("./routes/authRoute");
 const userRouter = require("./routes/userRoute");
-// const postAdsRoute = require("./routes/postAdsRoute");
+
 const { sequelize } = require("./models");
 
 // Parse ALLOWED_ORIGINS environment variable
