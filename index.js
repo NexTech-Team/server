@@ -45,6 +45,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // Routes
 app.use("/api/advertisments/", advertismentRouter);
 app.use("/api/auth/", authRouter);
