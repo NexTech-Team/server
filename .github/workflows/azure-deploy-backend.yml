@@ -78,9 +78,3 @@ jobs:
             DB_NAME=${{ secrets.DB_NAME }}
             DB_HOST=${{ secrets.DB_HOST }}
             EMAIL_PASS_NEW=${{ secrets.EMAIL_PASS_NEW }}
-
-      - name: Tag Docker image
-        run: docker tag carseek-backend-app carseek.azurecr.io/carseek-backend-app:latest
-
-      - name: Push Docker image
-        run: docker push carseek.azurecr.io/carseek-backend-app:latest
