@@ -8,10 +8,37 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      PORT: ${{ secrets.PORT }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      EMAIL: ${{ secrets.EMAIL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      FACEBOOK_CLIENT_ID: ${{ secrets.FACEBOOK_CLIENT_ID }}
+      FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
+      VONAGE_API: ${{ secrets.VONAGE_API }}
+      VONAGE_API_SECRET: ${{ secrets.VONAGE_API_SECRET }}
+      VONAGE_PHONE_NUMBER: ${{ secrets.VONAGE_PHONE_NUMBER }}
+      AUTH_URL: ${{ secrets.AUTH_URL }}
+      AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+      ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+      REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+      NODE_ENV: ${{ secrets.NODE_ENV }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      EMAIL_PASS_NEW: ${{ secrets.EMAIL_PASS_NEW }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
       - name: Log in to Azure Container Registry
         uses: azure/docker-login@v1
@@ -20,11 +47,34 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build Docker image
-        run: docker build -t carseek-backend-app .
-
-      - name: Tag Docker image
-        run: docker tag carseek-backend-app carseek.azurecr.io/carseek-backend-app:latest
-
-      - name: Push Docker image
-        run: docker push carseek.azurecr.io/carseek-backend-app:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: carseek.azurecr.io/carseek-backend-app:latest
+          build-args: |
+            PORT=${{ secrets.PORT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EMAIL=${{ secrets.EMAIL }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            FACEBOOK_CLIENT_ID=${{ secrets.FACEBOOK_CLIENT_ID }}
+            FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
+            VONAGE_API=${{ secrets.VONAGE_API }}
+            VONAGE_API_SECRET=${{ secrets.VONAGE_API_SECRET }}
+            VONAGE_PHONE_NUMBER=${{ secrets.VONAGE_PHONE_NUMBER }}
+            AUTH_URL=${{ secrets.AUTH_URL }}
+            AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+            NODE_ENV=${{ secrets.NODE_ENV }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASS=${{ secrets.DB_PASS }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            EMAIL_PASS_NEW=${{ secrets.EMAIL_PASS_NEW }}
