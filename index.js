@@ -16,7 +16,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
-const authRouter = require("./routes/authRoute");
+// const authRouter = require("./routes/authRoute");
 const userRouter = require("./routes/userRoute");
 
 const { sequelize } = require("./models");
@@ -52,7 +52,7 @@ app.get("/health", (req, res) => {
 
 // Routes
 app.use("/api/advertisments/", advertismentRouter);
-app.use("/api/auth/", authRouter);
+// app.use("/api/auth/", authRouter);
 app.use("/api/user/", userRouter);
 
 (async () => {
