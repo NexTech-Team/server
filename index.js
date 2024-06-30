@@ -3,13 +3,12 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
-dotenv.config();
 
-// Set NODE_ENV to 'development' if not already set
+// Load environment variables from the correct .env file
 const nodeEnv = process.env.NODE_ENV || "production";
-require("dotenv").config({ path: `.env.${nodeEnv}` });
+dotenv.config({ path: `.env.${nodeEnv}` });
 
-console.log("Environment:", process.env.NODE_ENV);
+console.log("Environment:", nodeEnv);
 require("./utils/redisClient");
 
 const app = express();
@@ -24,13 +23,15 @@ const { sequelize } = require("./models");
 // Parse ALLOWED_ORIGINS environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
-  : "https://www.carseek.live";
+  : ["https://www.carseek.live"];
+
 console.log("Allowed origins:", allowedOrigins);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (allowedOrigins.includes(origin) || !origin) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -50,11 +51,12 @@ app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Routes
+// API Routes
 app.use("/api/advertisments/", advertismentRouter);
 app.use("/api/auth/", authRouter);
 app.use("/api/user/", userRouter);
 
+// Sync database and start server
 (async () => {
   try {
     await sequelize.sync();
