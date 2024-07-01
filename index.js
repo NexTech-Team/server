@@ -12,7 +12,7 @@ console.log("Environment:", nodeEnv);
 require("./utils/redisClient");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = 80; //process.env.PORT || 5000;
 
 const advertismentRouter = require("./routes/advertisments");
 const authRouter = require("./routes/authRoute");
