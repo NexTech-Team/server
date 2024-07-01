@@ -31,21 +31,25 @@ const postAd = async (req, res) => {
         mileage,
         fuel,
         postUrl,
-        postedDate,
-        rank,
-        source,
         transmission,
         year,
         body,
         condition,
         description,
-        negotiable,
         name,
         email,
         phoneNumber,
-        hidePhoneNumber,
       } = req.body;
       const userId = req.id;
+
+      let negotiable =
+        req.body.hidePhoneNumber !== "undefined"
+          ? req.body.hidePhoneNumber
+          : false;
+      let hidePhoneNumber =
+        req.body.hidePhoneNumber !== "undefined"
+          ? req.body.hidePhoneNumber
+          : false;
 
       if (!userId) {
         return res.status(401).send({ message: "Unauthorized" });
@@ -102,8 +106,6 @@ const postAd = async (req, res) => {
         fuelType: fuel,
         postUrl,
         postedDate: new Date(),
-        rank,
-        source,
         transmission,
         year,
         body,
