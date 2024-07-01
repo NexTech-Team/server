@@ -17,6 +17,7 @@ const port = process.env.PORT || 5000;
 const advertismentRouter = require("./routes/advertisments");
 const authRouter = require("./routes/authRoute");
 const userRouter = require("./routes/userRoute");
+const postAdsRouter = require("./routes/postAdsRoute");
 
 const { sequelize } = require("./models");
 
@@ -55,6 +56,7 @@ app.get("/health", (req, res) => {
 app.use("/api/advertisments/", advertismentRouter);
 app.use("/api/auth/", authRouter);
 app.use("/api/user/", userRouter);
+app.use("/api/post-ads/", postAdsRouter);
 
 // Sync database and start server
 (async () => {

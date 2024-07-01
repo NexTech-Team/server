@@ -1,4 +1,7 @@
-// config/config.js
+const dotenv = require("dotenv");
+
+const nodeEnv = process.env.NODE_ENV || "development";
+dotenv.config({ path: `.env.${nodeEnv}` });
 
 module.exports = {
   development: {
