@@ -29,8 +29,9 @@ const getPendings = async (req, res) => {
 };
 
 const getApprovedAds = async (req, res) => {
-  console.log("Approved Ads");
   try {
+    console.log("Get Approved Ads");
+    const { Op } = require("sequelize");
     const approvedAds = await CarAds.findAll({
       where: {
         adminId: { [Op.not]: null },
@@ -38,10 +39,26 @@ const getApprovedAds = async (req, res) => {
     });
     console.log("Approved Ads", approvedAds);
 
-    const adminName = await User.findByPk(approvedAds.adminId);
-    console.log("Admin Name", adminName);
+    if (!approvedAds) {
+      return res
+        .status(400)
+        .json({ message: "Admin No approved any ads yet." });
+    }
     console.log("Approved Ads", approvedAds);
-    res.status(200).json({ approvedAds, adminName });
+
+    // Fetch admin details for each approved ad
+    const adminDetailsPromises = approvedAds.map(async (ad) => {
+      const admin = await User.findByPk(ad.adminId);
+      return {
+        ...ad.dataValues, // Spread ad data
+        adminName: admin ? admin.name : null, // Include admin name if admin exists
+      };
+    });
+
+    const adsWithAdminDetails = await Promise.all(adminDetailsPromises);
+    console.log("Ads with Admin Details", adsWithAdminDetails);
+
+    res.status(200).json({ adsWithAdminDetails });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
