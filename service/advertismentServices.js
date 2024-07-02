@@ -1,7 +1,7 @@
 const models = require("../models");
 const sequelize = require("sequelize");
 const { getPagination, getPagingData } = require("../utils/pagination");
-
+const { CarAds } = require("../models");
 const buildWhereCondition = (filter) => {
   const whereCondition = {};
 
@@ -55,7 +55,7 @@ const getAllCars = async (page, size, filter, sortFilter) => {
       ? [[sortFilter.field, sortFilter.order]]
       : [["updatedAt", "DESC"]];
 
-    const data = await models.Car.findAndCountAll({
+    const data = await models.CarAds.findAndCountAll({
       where: whereCondition,
       order,
       limit,

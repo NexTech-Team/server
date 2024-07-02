@@ -1,33 +1,29 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Car extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+  class CarAds extends Model {
     static associate(models) {
       // define association here
     }
   }
-  Car.init(
+  CarAds.init(
     {
       id: {
         allowNull: false,
         primaryKey: true,
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
       },
       brand: DataTypes.STRING,
       model: DataTypes.STRING,
       capacity: DataTypes.INTEGER,
-      discription: DataTypes.STRING,
+      description: DataTypes.STRING, // Fixed typo
       price: DataTypes.FLOAT,
       negotiable: DataTypes.BOOLEAN,
       location: DataTypes.STRING,
       mileage: DataTypes.FLOAT,
       fuelType: DataTypes.STRING,
-      imageUrl: DataTypes.ARRAY(DataTypes.STRING),
+      imageUrl: DataTypes.JSON, // Use JSON to store array of strings
       postUrl: DataTypes.STRING,
       postedDate: DataTypes.DATE,
       transmission: DataTypes.STRING,
@@ -43,28 +39,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-
       userId: {
         type: DataTypes.UUID,
         allowNull: false,
-        // references: {
-        //   model: "Users",
-        //   key: "id",
-        // },
       },
       adminId: {
         type: DataTypes.UUID,
         allowNull: true,
-        // references: {
-        //   model: "Admins",
-        //   key: "id",
-        // },
       },
     },
     {
       sequelize,
-      modelName: "Car",
+      modelName: "CarAds",
     }
   );
-  return Car;
+  return CarAds;
 };

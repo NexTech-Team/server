@@ -4,18 +4,18 @@ module.exports = (sequelize, DataTypes) => {
   class Subscription extends Model {
     static associate(models) {
       // define association here
-      Subscription.belongsTo(models.User, {
-        foreignKey: "userId",
-        as: "user",
-      });
-      Subscription.belongsTo(models.Package, {
-        foreignKey: "packageId",
-        as: "package",
-      });
-      Subscription.belongsTo(models.BillingCycle, {
-        foreignKey: "billingCycleId",
-        as: "billingCycle",
-      });
+      // Subscription.belongsTo(models.User, {
+      //   foreignKey: "userId",
+      //   as: "user",
+      // });
+      // Subscription.belongsTo(models.Package, {
+      //   foreignKey: "packageId",
+      //   as: "package",
+      // });
+      // Subscription.belongsTo(models.BillingCycle, {
+      //   foreignKey: "billingCycleId",
+      //   as: "billingCycle",
+      // });
     }
   }
   Subscription.init(

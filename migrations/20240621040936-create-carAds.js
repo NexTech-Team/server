@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Ads", {
+    await queryInterface.createTable("CarAds", {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -17,10 +17,15 @@ module.exports = {
       },
       capacity: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+      },
+      description: {
+        type: Sequelize.STRING,
       },
       price: {
         type: Sequelize.FLOAT,
+      },
+      negotiable: {
+        type: Sequelize.BOOLEAN,
       },
       location: {
         type: Sequelize.STRING,
@@ -29,7 +34,10 @@ module.exports = {
         type: Sequelize.FLOAT,
       },
       fuelType: {
-        type: Sequelize.JSON,
+        type: Sequelize.STRING,
+      },
+      imageUrl: {
+        type: Sequelize.JSON, // Use JSON to store array of strings
         allowNull: false,
       },
       postUrl: {
@@ -38,21 +46,26 @@ module.exports = {
       postedDate: {
         type: Sequelize.DATE,
       },
-      rank: {
-        type: Sequelize.INTEGER,
-      },
-      source: {
+      transmission: {
         type: Sequelize.STRING,
       },
-      transmission: {
-        type: Sequelize.JSON,
-        allowNull: false,
-      },
       year: {
-        type: Sequelize.JSON,
-        allowNull: false,
+        type: Sequelize.INTEGER,
       },
       isApproved: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+      },
+      contactName: {
+        type: Sequelize.STRING,
+      },
+      contactEmail: {
+        type: Sequelize.STRING,
+      },
+      contactPhone: {
+        type: Sequelize.STRING,
+      },
+      hidePhone: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
@@ -63,42 +76,6 @@ module.exports = {
       adminId: {
         type: Sequelize.UUID,
         allowNull: true,
-      },
-      body: {
-        type: Sequelize.JSON,
-        allowNull: false,
-      },
-      condition: {
-        type: Sequelize.JSON,
-        allowNull: false,
-      },
-      description: {
-        type: Sequelize.TEXT,
-        allowNull: false,
-      },
-      negotiable: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-      },
-      photos: {
-        type: Sequelize.JSON,
-        allowNull: false,
-      },
-      contactName: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      contactEmail: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      contactPhoneNumber: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      hidePhoneNumber: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
       },
       createdAt: {
         allowNull: false,
@@ -113,6 +90,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Ads");
+    await queryInterface.dropTable("CarAds");
   },
 };

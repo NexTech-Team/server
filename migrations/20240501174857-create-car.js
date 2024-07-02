@@ -18,8 +18,14 @@ module.exports = {
       capacity: {
         type: Sequelize.INTEGER,
       },
+      discription: {
+        type: Sequelize.STRING,
+      },
       price: {
         type: Sequelize.FLOAT,
+      },
+      negotiable: {
+        type: Sequelize.BOOLEAN,
       },
       location: {
         type: Sequelize.STRING,
@@ -31,19 +37,14 @@ module.exports = {
         type: Sequelize.STRING,
       },
       imageUrl: {
-        type: Sequelize.STRING,
+        type: Sequelize.ARRAY(Sequelize.STRING),
+        allowNull: false,
       },
       postUrl: {
         type: Sequelize.STRING,
       },
       postedDate: {
         type: Sequelize.DATE,
-      },
-      rank: {
-        type: Sequelize.INTEGER,
-      },
-      source: {
-        type: Sequelize.STRING,
       },
       transmission: {
         type: Sequelize.STRING,
@@ -52,6 +53,19 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       isApproved: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+      },
+      contactName: {
+        type: Sequelize.STRING,
+      },
+      contactEmail: {
+        type: Sequelize.STRING,
+      },
+      contactPhone: {
+        type: Sequelize.STRING,
+      },
+      hidePhone: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
