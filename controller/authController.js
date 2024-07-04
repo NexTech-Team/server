@@ -233,6 +233,8 @@ const phoneRegister = asyncHandler(async (req, res) => {
   }
   const code = generateVerificationCode();
   console.log("Verification Code: ", code);
+  console.log("Phone: ", phone);
+  console.log("Country Code: ", countryCode);
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
 
@@ -319,6 +321,41 @@ const refresh = asyncHandler(async (req, res) => {
   );
 });
 
+const socialLogin = async (req, res) => {
+  console.log("Social Login Request Body: ", req.body);
+  const { name, email, provider, providerId } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+  try {
+    let user = await User.findOne({ where: { email } });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        // provider,
+        // providerId,
+        status: "active",
+      });
+    }
+    // if (user.providerId === "") {
+    //   await User.update(
+    //     { providerId: providerId, provider: provider, name: name },
+    //     { where: { email } }
+    //   );
+    // }
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    res.cookie("jwt", refreshToken, cookieOptions);
+    console.log("User logged in successfully");
+
+    res.json({ accessToken, message: "User logged in successfully" });
+  } catch (error) {
+    console.error("Social login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const logout = (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.sendStatus(204); // No content
@@ -339,4 +376,5 @@ module.exports = {
   resendPhoneVerificationCode,
   refresh,
   logout,
+  socialLogin,
 };
