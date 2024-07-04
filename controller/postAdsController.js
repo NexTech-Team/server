@@ -1,23 +1,45 @@
 const { CarAds } = require("../models");
 const multer = require("multer");
-const { BlobServiceClient } = require("@azure/storage-blob");
+const { google } = require("googleapis");
 const path = require("path");
+const { Readable } = require("stream");
 require("dotenv").config();
 
-const AZURE_STORAGE_CONNECTION_STRING =
-  process.env.AZURE_STORAGE_CONNECTION_STRING;
-const blobServiceClient = BlobServiceClient.fromConnectionString(
-  AZURE_STORAGE_CONNECTION_STRING
-);
-const containerName = "carseek";
-const containerClient = blobServiceClient.getContainerClient(containerName);
-
 const storage = multer.memoryStorage();
-const upload = multer({ storage }).array("photos", 5);
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }).array(
+  "photos",
+  5
+); // Limit file size to 5MB
+
+const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+const REDIRECT_URI = "https://developers.google.com/oauthplayground";
+const REFRESH_TOKEN = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+
+const oauth2Client = new google.auth.OAuth2(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI
+);
+
+oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+const drive = google.drive({
+  version: "v3",
+  auth: oauth2Client,
+});
+
+const bufferToStream = (buffer) => {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+};
 
 const postAd = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
+      console.error("Error uploading files", err);
       return res.status(400).send({ message: "Error uploading files" });
     }
     console.log("Request Body", req.body);
@@ -42,15 +64,6 @@ const postAd = async (req, res) => {
       } = req.body;
       const userId = req.id;
 
-      let negotiable =
-        req.body.hidePhoneNumber !== "undefined"
-          ? req.body.hidePhoneNumber
-          : false;
-      let hidePhoneNumber =
-        req.body.hidePhoneNumber !== "undefined"
-          ? req.body.hidePhoneNumber
-          : false;
-
       if (!userId) {
         return res.status(401).send({ message: "Unauthorized" });
       }
@@ -70,29 +83,54 @@ const postAd = async (req, res) => {
       ) {
         return res.status(400).send({ message: "All fields are required" });
       }
-      if (negotiable === "undefined") {
-        negotiable = false;
-      }
-      if (hidePhoneNumber === "undefined") {
-        hidePhoneNumber = false;
-      }
+
+      let negotiable =
+        req.body.negotiable !== "undefined" ? req.body.negotiable : false;
+      let hidePhoneNumber =
+        req.body.hidePhoneNumber !== "undefined"
+          ? req.body.hidePhoneNumber
+          : false;
 
       const photoUrls = [];
 
+      // Create a unique folder name
+      const folderName = `Ad_${userId}_${Date.now()}`;
+
+      // Create a folder in Google Drive
+      const folderMetadata = {
+        name: folderName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: ["1QXlEB8rXFgjpn_-umtT0sgEwpuh3Bm20"], // Replace with your Google Drive folder ID
+      };
+      const folder = await drive.files.create({
+        resource: folderMetadata,
+        fields: "id",
+      });
+      const folderId = folder.data.id;
+
       for (const file of req.files) {
-        const blobName = `${userId}-${Date.now()}${path.extname(
-          file.originalname
-        )}`;
-        console.log("Blob Name", blobName);
-        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
-        await blockBlobClient.uploadData(file.buffer, {
-          blobHTTPHeaders: {
-            blobContentType: file.mimetype,
-          },
+        const fileMetadata = {
+          name: `${userId}-${Date.now()}${path.extname(file.originalname)}`,
+          parents: [folderId], // Use the created folder ID
+        };
+        const media = {
+          mimeType: file.mimetype,
+          body: bufferToStream(file.buffer),
+        };
+        const response = await drive.files.create({
+          requestBody: fileMetadata,
+          media: media,
+          fields: "id, webViewLink, webContentLink",
         });
+        console.log("File ID: ", response.data.id);
+        console.log("File WebViewLink: ", response.data.webViewLink);
+        console.log("File WebContentLink: ", response.data.webContentLink);
 
-        const photoUrl = blockBlobClient.url;
+        // Modify URL to remove '&export=download'
+        const photoUrl = response.data.webContentLink.replace(
+          "&export=download",
+          ""
+        );
         photoUrls.push(photoUrl);
       }
 
@@ -111,12 +149,12 @@ const postAd = async (req, res) => {
         body,
         condition,
         description,
-        negotiable: negotiable || false,
+        negotiable,
         imageUrl: photoUrls, // Store array of image URLs
         contactName: name,
         contactEmail: email,
         contactPhoneNumber: phoneNumber,
-        hidePhoneNumber: hidePhoneNumber || false,
+        hidePhoneNumber,
         isApproved: false,
         userId,
       });
@@ -124,7 +162,7 @@ const postAd = async (req, res) => {
 
       res.status(201).send({ message: "Ad posted successfully.", carAd });
     } catch (error) {
-      console.error(error);
+      console.error("Server error", error);
       res.status(500).send({ message: "Server error" });
     }
   });

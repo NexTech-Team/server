@@ -21,5 +21,6 @@ router.post(
 );
 router.post("/logout", authController.logout);
 router.get("/refresh", authController.refresh);
+router.post("/social-login", authController.socialLogin);
 
 module.exports = router;
