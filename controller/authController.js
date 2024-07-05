@@ -333,17 +333,10 @@ const socialLogin = async (req, res) => {
       user = await User.create({
         name,
         email,
-        // provider,
-        // providerId,
         status: "active",
       });
     }
-    // if (user.providerId === "") {
-    //   await User.update(
-    //     { providerId: providerId, provider: provider, name: name },
-    //     { where: { email } }
-    //   );
-    // }
+
     const { accessToken, refreshToken } = generateTokens(user);
 
     res.cookie("jwt", refreshToken, cookieOptions);
