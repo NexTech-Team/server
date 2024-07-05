@@ -90,6 +90,14 @@ const emailLogin = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: "User not found. Please register first" });
   }
+  if (user && user.password === null) {
+    return res
+      .status(400)
+      .json({
+        message:
+          "User has signed up with social login. Please login with social login",
+      });
+  }
   if (user.status === "inactive") {
     return res
       .status(400)
