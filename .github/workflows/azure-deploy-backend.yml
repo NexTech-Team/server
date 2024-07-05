@@ -84,7 +84,7 @@ jobs:
             DB_HOST=${{ secrets.DB_HOST }}
             EMAIL_PASS_NEW=${{ secrets.EMAIL_PASS_NEW }}
             GOOGLE_DRIVE_CLIENT_ID= ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
-            GOOGLE_DRIVE_CLIENT_SECRET= ${{ secrets.DGOOGLE_DRIVE_CLIENT_SECRET }}
+            GOOGLE_DRIVE_CLIENT_SECRET= ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
             GOOGLE_DRIVE_REFRESH_TOKEN= ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
             INFOBIP_API_KEY= ${{ secrets.INFOBIP_API_KEY}}
             INFOBIP_BASE_URL= ${{ secrets.INFOBIP_BASE_URL }}
