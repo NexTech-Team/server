@@ -19,7 +19,21 @@ const AZURE_STORAGE_CONNECTION_STRING =
   process.env.AZURE_STORAGE_CONNECTION_STRING;
 const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME;
 const AZURE_STORAGE_ACCOUNT_KEY = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-const CONTAINER_NAME = "carseek";
+const CONTAINER_NAME = "carseek"; // Define the container name here
+
+if (!AZURE_STORAGE_CONNECTION_STRING) {
+  throw new Error(
+    "AZURE_STORAGE_CONNECTION_STRING is not defined in environment variables"
+  );
+}
+
+// Log the connection string for debugging (without sensitive information)
+console.log(
+  "AZURE_STORAGE_CONNECTION_STRING:",
+  AZURE_STORAGE_CONNECTION_STRING.split(";")
+    .map((part) => (part.startsWith("AccountKey") ? "AccountKey=***" : part))
+    .join(";")
+);
 
 const blobServiceClient = BlobServiceClient.fromConnectionString(
   AZURE_STORAGE_CONNECTION_STRING
