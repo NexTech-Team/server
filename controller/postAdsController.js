@@ -7,24 +7,33 @@ const {
   generateBlobSASQueryParameters,
   ContainerSASPermissions,
 } = require("@azure/storage-blob");
-require("dotenv").config();
+require("dotenv").config(); // Ensure dotenv is configured
 
+// Set up multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }).array(
   "photos",
   5
 );
 
+// Read environment variables
 const AZURE_STORAGE_CONNECTION_STRING =
   process.env.AZURE_STORAGE_CONNECTION_STRING;
 const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME;
 const AZURE_STORAGE_ACCOUNT_KEY = process.env.AZURE_STORAGE_ACCOUNT_KEY;
 const CONTAINER_NAME = "carseek";
 
+// Ensure the connection string is valid
+if (!AZURE_STORAGE_CONNECTION_STRING) {
+  throw new Error("Azure Storage Connection String is not defined.");
+}
+
+// Create the BlobServiceClient object
 const blobServiceClient = BlobServiceClient.fromConnectionString(
   AZURE_STORAGE_CONNECTION_STRING
 );
 
+// Function to generate SAS URL for blob
 const generateSasUrl = (containerClient, blobName) => {
   const sharedKeyCredential = new StorageSharedKeyCredential(
     AZURE_STORAGE_ACCOUNT_NAME,
@@ -45,6 +54,7 @@ const generateSasUrl = (containerClient, blobName) => {
   return sasUrl;
 };
 
+// Function to handle posting an ad
 const postAd = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
