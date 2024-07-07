@@ -90,6 +90,12 @@ const emailLogin = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: "User not found. Please register first" });
   }
+  if (user && user.password === null) {
+    return res.status(400).json({
+      message:
+        "User has signed up with social login. Please login with social login",
+    });
+  }
   if (user.status === "inactive") {
     return res
       .status(400)
@@ -155,6 +161,7 @@ const resendEmailVerificationCode = asyncHandler(async (req, res) => {
 // Forgot Password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
+  console.log("Email: ", email);
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
@@ -162,12 +169,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
+  console.log("User: ", user);
+  console.log("Reset Password Secret: ", process.env.RESET_PASSWORD_SECRET);
+  console.log("Auth URL: ", process.env.AUTH_URL);
+
   const token = jwt.sign(
     { email: user.email, id: user.id },
     process.env.RESET_PASSWORD_SECRET,
     { expiresIn: "15m" }
   );
-  const passwordResetURL = `${process.env.AUTH_URL}/resetPassword/${user.id}/${token}`;
+  const passwordResetURL = `${process.env.AUTH_URL}/password-reset?id=${user.id}&token=${token}`;
 
   await sendEmail.sendActivationEmail(
     user.email,
@@ -182,6 +193,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // Password Reset
 const passwordReset = asyncHandler(async (req, res) => {
   const { id, token, password, confirmPassword } = req.body;
+  console.log("ID: ", id);
+  console.log("Token: ", token);
+  console.log("Password: ", password);
+  console.log("Confirm Password: ", confirmPassword);
+
   if (!id || !token || !password || !confirmPassword) {
     return res.status(400).json({
       message: "ID, token, password, and confirm password are required",
@@ -192,9 +208,15 @@ const passwordReset = asyncHandler(async (req, res) => {
   }
   const user = await User.findOne({ where: { id } });
   if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    return res
+      .status(400)
+      .json({ message: "User not found,Please recheck you entered Email" });
   }
   const payload = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+  console.log("Payload: ", payload);
+  if (!payload) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
   if (payload.id !== user.id) {
     return res.status(400).json({ message: "Invalid token" });
   }
@@ -292,6 +314,7 @@ const resendPhoneVerificationCode = asyncHandler(async (req, res) => {
 
 const refresh = asyncHandler(async (req, res) => {
   const cookies = req.cookies;
+  console.log("Cookies: ", req.cookies.jwt);
   if (!cookies?.jwt) return res.status(401).json({ message: "Unauthorized" });
 
   const refreshToken = cookies.jwt;
@@ -300,7 +323,7 @@ const refresh = asyncHandler(async (req, res) => {
     process.env.REFRESH_TOKEN_SECRET,
     async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Forbidden" });
-
+      console.log("Try to find User: ", decoded.id);
       const foundUser = await User.findOne({ where: { id: decoded.id } });
       if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
@@ -315,22 +338,21 @@ const refresh = asyncHandler(async (req, res) => {
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "15m" }
       );
-
+      console.log("In Refresh Access Token: ", accessToken);
       res.json({ accessToken });
     }
   );
 });
 
 const socialLogin = async (req, res) => {
-  console.log("Social Login Request Body: ", req.body);
-  const { name, email, provider, providerId } = req.body;
+  const { name, email } = req.body;
   if (!name || !email) {
     return res.status(400).json({ message: "All fields are required" });
   }
   try {
     let user = await User.findOne({ where: { email } });
     if (!user) {
-      user = await User.create({
+      let newUser = await User.create({
         name,
         email,
         status: "active",
@@ -339,9 +361,17 @@ const socialLogin = async (req, res) => {
 
     const { accessToken, refreshToken } = generateTokens(user);
 
-    res.cookie("jwt", refreshToken, cookieOptions);
-    console.log("User logged in successfully");
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    };
 
+    res.cookie("refreshToken", refreshToken, cookieOptions);
+    console.log("Cookie Options: ", cookieOptions);
+    console.log("Refresh Token: ", refreshToken);
+    console.log("Access Token: ", accessToken);
     res.json({ accessToken, message: "User logged in successfully" });
   } catch (error) {
     console.error("Social login error:", error);
