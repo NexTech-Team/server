@@ -7,6 +7,8 @@ async function getAll(req, res) {
     const parsedFilter = filter ? JSON.parse(filter) : {};
     const parsedSortFilter = sortFilter ? JSON.parse(sortFilter) : {};
 
+    console.log("Page:", page);
+
     const result = await carService.getAllCars(
       page,
       size,

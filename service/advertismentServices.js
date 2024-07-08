@@ -51,6 +51,8 @@ const getAllCars = async (page, size, filter, sortFilter) => {
     const { limit, offset } = getPagination(page, size);
     const whereCondition = buildWhereCondition(filter);
 
+    console.log("Where Condition:", whereCondition);
+
     const order = sortFilter
       ? [[sortFilter.field, sortFilter.order]]
       : [["updatedAt", "DESC"]];
@@ -61,6 +63,8 @@ const getAllCars = async (page, size, filter, sortFilter) => {
       limit,
       offset,
     });
+
+    // console.log("Data:", data.rows);
 
     return getPagingData(data, page, limit);
   } catch (error) {
