@@ -1,4 +1,4 @@
-// const express = require('express');
+const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../models");
@@ -13,8 +13,8 @@ dotenv.config();
 // Cookie settings for different environments
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production", // secure only in production
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // SameSite policy
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refreshToken
 };
 
@@ -23,16 +23,14 @@ const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "2h" }
   );
   const refreshToken = jwt.sign(
     { id: user.id },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "30d" } // 30 days
   );
-  redisClient.set(user.id.toString(), refreshToken, {
-    EX: 2592000, // 30 days in seconds
-  });
+  redisClient.set(user.id.toString(), refreshToken, { EX: 2592000 }); // 30 days in seconds
   return { accessToken, refreshToken };
 };
 
@@ -42,6 +40,57 @@ const generateVerificationCode = () => {
     .toString()
     .padStart(6, "0");
 };
+
+// Verify JWT Middleware
+const verifyJWT = asyncHandler(async (req, res, next) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.id = decoded.id;
+    req.user = decoded.name;
+    req.roles = decoded.role;
+    next();
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      const refreshToken = req.cookies?.jwt;
+      if (!refreshToken) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      try {
+        const decodedRefresh = jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_SECRET
+        );
+        const newAccessToken = jwt.sign(
+          {
+            id: decodedRefresh.id,
+            name: decodedRefresh.name,
+            role: decodedRefresh.role,
+          },
+          process.env.ACCESS_TOKEN_SECRET,
+          { expiresIn: "15m" }
+        );
+
+        res.setHeader("Authorization", `Bearer ${newAccessToken}`);
+        req.id = decodedRefresh.id;
+        req.user = decodedRefresh.name;
+        req.roles = decodedRefresh.role;
+        next();
+      } catch (refreshErr) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+    } else {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+  }
+});
 
 // Email Registration
 const emailRegister = asyncHandler(async (req, res) => {
@@ -161,7 +210,6 @@ const resendEmailVerificationCode = asyncHandler(async (req, res) => {
 // Forgot Password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  console.log("Email: ", email);
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
@@ -169,9 +217,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
-  console.log("User: ", user);
-  console.log("Reset Password Secret: ", process.env.RESET_PASSWORD_SECRET);
-  console.log("Auth URL: ", process.env.AUTH_URL);
 
   const token = jwt.sign(
     { email: user.email, id: user.id },
@@ -193,11 +238,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // Password Reset
 const passwordReset = asyncHandler(async (req, res) => {
   const { id, token, password, confirmPassword } = req.body;
-  console.log("ID: ", id);
-  console.log("Token: ", token);
-  console.log("Password: ", password);
-  console.log("Confirm Password: ", confirmPassword);
-
   if (!id || !token || !password || !confirmPassword) {
     return res.status(400).json({
       message: "ID, token, password, and confirm password are required",
@@ -210,10 +250,9 @@ const passwordReset = asyncHandler(async (req, res) => {
   if (!user) {
     return res
       .status(400)
-      .json({ message: "User not found,Please recheck you entered Email" });
+      .json({ message: "User not found, please recheck your entered email" });
   }
   const payload = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
-  console.log("Payload: ", payload);
   if (!payload) {
     return res.status(400).json({ message: "Invalid or expired token" });
   }
@@ -226,6 +265,7 @@ const passwordReset = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Password reset successfully" });
 });
 
+// Phone Login
 const phoneLogin = asyncHandler(async (req, res) => {
   const { phone, countryCode } = req.body;
   if (!phone || !countryCode) {
@@ -240,12 +280,13 @@ const phoneLogin = asyncHandler(async (req, res) => {
       .json({ message: "User not found, please register first" });
   }
   const code = generateVerificationCode();
-  console.log("Verification Code: ", code);
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
+
   res.status(200).json({ message: `Verification code sent to ${phone}` });
 });
 
+// Phone Register
 const phoneRegister = asyncHandler(async (req, res) => {
   const { phone, name, countryCode } = req.body;
   if (!phone || !name || !countryCode) {
@@ -254,23 +295,17 @@ const phoneRegister = asyncHandler(async (req, res) => {
       .json({ message: "Phone, name, and country code are required" });
   }
   const code = generateVerificationCode();
-  console.log("Verification Code: ", code);
-  console.log("Phone: ", phone);
-  console.log("Country Code: ", countryCode);
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
 
-  const newUser = await User.create({
-    phone,
-    name,
-    status: "inactive",
-  });
+  const newUser = await User.create({ phone, name, status: "inactive" });
 
   res
     .status(200)
     .json({ message: "User registered successfully. Verification code sent." });
 });
 
+// Phone Verification
 const phoneVerification = asyncHandler(async (req, res) => {
   const { phoneNumber: phone, code } = req.body;
   if (!phone || !code) {
@@ -299,6 +334,7 @@ const phoneVerification = asyncHandler(async (req, res) => {
   res.json({ accessToken, message: "Phone verified successfully" });
 });
 
+// Resend Phone Verification Code
 const resendPhoneVerificationCode = asyncHandler(async (req, res) => {
   const { phone, countryCode } = req.body;
   if (!phone || !countryCode) {
@@ -309,12 +345,13 @@ const resendPhoneVerificationCode = asyncHandler(async (req, res) => {
   const code = generateVerificationCode();
   await sendSMS(phone, countryCode, code);
   await redisClient.set(phone, code.toString(), { EX: 300 });
+
   res.status(200).json({ message: `Verification code sent to ${phone}` });
 });
 
+// Refresh Token
 const refresh = asyncHandler(async (req, res) => {
   const cookies = req.cookies;
-  console.log("Cookies: ", req.cookies.jwt);
   if (!cookies?.jwt) return res.status(401).json({ message: "Unauthorized" });
 
   const refreshToken = cookies.jwt;
@@ -323,7 +360,6 @@ const refresh = asyncHandler(async (req, res) => {
     process.env.REFRESH_TOKEN_SECRET,
     async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Forbidden" });
-      console.log("Try to find User: ", decoded.id);
       const foundUser = await User.findOne({ where: { id: decoded.id } });
       if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
@@ -338,13 +374,14 @@ const refresh = asyncHandler(async (req, res) => {
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "15m" }
       );
-      console.log("In Refresh Access Token: ", accessToken);
+
       res.json({ accessToken });
     }
   );
 });
 
-const socialLogin = async (req, res) => {
+// Social Login
+const socialLogin = asyncHandler(async (req, res) => {
   const { name, email } = req.body;
   if (!name || !email) {
     return res.status(400).json({ message: "All fields are required" });
@@ -352,33 +389,20 @@ const socialLogin = async (req, res) => {
   try {
     let user = await User.findOne({ where: { email } });
     if (!user) {
-      let newUser = await User.create({
-        name,
-        email,
-        status: "active",
-      });
+      user = await User.create({ name, email, status: "active" });
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
+    res.cookie("jwt", refreshToken, cookieOptions);
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    };
-
-    res.cookie("refreshToken", refreshToken, cookieOptions);
-    console.log("Cookie Options: ", cookieOptions);
-    console.log("Refresh Token: ", refreshToken);
-    console.log("Access Token: ", accessToken);
     res.json({ accessToken, message: "User logged in successfully" });
   } catch (error) {
     console.error("Social login error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-};
+});
 
+// Logout
 const logout = (req, res) => {
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.sendStatus(204); // No content

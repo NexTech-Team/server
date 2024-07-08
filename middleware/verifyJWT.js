@@ -9,18 +9,18 @@ const verifyJWT = async (req, res, next) => {
   }
 
   const token = authHeader.split(" ")[1];
-  console.log("Jwt Token", token);
+  console.log("JWT Token", token);
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
     if (err) {
       console.error("Error verifying JWT", err);
+
       if (err.name === "TokenExpiredError") {
         const refreshToken = req.cookies?.jwt;
         if (!refreshToken) {
           return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // Verify the refresh token
         jwt.verify(
           refreshToken,
           process.env.REFRESH_TOKEN_SECRET,
@@ -38,10 +38,10 @@ const verifyJWT = async (req, res, next) => {
                 role: decodedRefresh.role,
               },
               process.env.ACCESS_TOKEN_SECRET,
-              { expiresIn: "15m" } // Adjust the expiration time as needed
+              { expiresIn: "2h" } // Adjust the expiration time as needed
             );
 
-            // Optional: Set the new access token in the response header or body
+            // Set the new access token in the response header
             res.setHeader("Authorization", `Bearer ${newAccessToken}`);
 
             // Continue with the request using the new access token
@@ -55,7 +55,7 @@ const verifyJWT = async (req, res, next) => {
         return res.status(403).json({ message: "Forbidden" });
       }
     } else {
-      console.log("Decode user", decoded);
+      console.log("Decoded user", decoded);
       req.id = decoded.id;
       req.user = decoded.name;
       req.roles = decoded.role;
