@@ -44,6 +44,19 @@ const buildWhereCondition = (filter) => {
   return whereCondition;
 };
 
+const getAdvertismentById = async (id) => {
+  console.log("Get advertisement by ID:", id);
+  try {
+    const data = await models.CarAds.findOne({
+      where: { id: id },
+    });
+    console.log("Get advertisement Data:", data);
+    return data;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 const getAllCars = async (page, size, filter, sortFilter) => {
   console.log("getAll Filter:", filter);
   console.log("Sort Filter:", sortFilter);
@@ -168,4 +181,5 @@ module.exports = {
   getModels,
   getFloatingData,
   getMarketData,
+  getAdvertismentById,
 };

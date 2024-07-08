@@ -1,5 +1,19 @@
 const carService = require("../service/advertismentServices");
 
+async function getAdvertismentById(req, res) {
+  const { id } = req.body;
+  console.log("Get advertisement by ID:", id);
+  try {
+    const advertisement = await carService.getAdvertismentById(id);
+    if (!advertisement) {
+      return res.status(404).json({ message: "Advertisement not found" });
+    }
+    res.status(200).json(advertisement);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 async function getAll(req, res) {
   const { page, size, filter, sortFilter } = req.query;
 
@@ -78,4 +92,5 @@ module.exports = {
   getModels,
   getFloatingData,
   getMarketData,
+  getAdvertismentById,
 };
