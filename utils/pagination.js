@@ -10,6 +10,13 @@ const getPagingData = (data, page, limit) => {
   const currentPage = page ? +page : 0;
   const totalPages = Math.ceil(totalCars / limit);
 
+  console.log(
+    "In Pagination ",
+    totalCars,
+    advertisments,
+    totalPages,
+    currentPage
+  );
   return { totalCars, advertisments, totalPages, currentPage };
 };
 
