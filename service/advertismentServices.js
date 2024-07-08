@@ -72,7 +72,7 @@ const getAllCars = async (page, size, filter, sortFilter) => {
 const getBrands = async (page, size) => {
   try {
     const { limit, offset } = getPagination(page, size);
-    const data = await models.Car.findAndCountAll({
+    const data = await models.CarAds.findAndCountAll({
       limit,
       offset,
       attributes: [
@@ -94,7 +94,7 @@ const getModels = async (page, size, filter) => {
     const { limit, offset } = getPagination(page, size);
     const whereCondition = buildWhereCondition(filter);
 
-    const data = await models.Car.findAndCountAll({
+    const data = await models.CarAds.findAndCountAll({
       where: whereCondition,
       limit,
       offset,
@@ -121,7 +121,7 @@ const getFloatingData = async (brand, model, year) => {
         message: "Missing parameters: brand, model, and year are required.",
       });
     }
-    const data = await models.Car.findAll({
+    const data = await models.CarAds.findAll({
       where: { brand: brand, model: model, year: year },
     });
 
@@ -136,7 +136,7 @@ const getMarketData = async (filter) => {
   console.log("Market Data Filter:", filter);
 
   try {
-    const data = await models.Car.findAndCountAll({
+    const data = await models.CarAds.findAndCountAll({
       where: filter,
     });
 
