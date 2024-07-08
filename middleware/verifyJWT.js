@@ -14,6 +14,7 @@ const verifyJWT = async (req, res, next) => {
     req.id = decoded.id;
     req.user = decoded.name;
     req.roles = decoded.role;
+
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {

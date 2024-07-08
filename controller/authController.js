@@ -115,6 +115,7 @@ const emailLogin = asyncHandler(async (req, res) => {
 // Email Verification
 const emailVerification = asyncHandler(async (req, res) => {
   const { email, code } = req.body;
+  console.log("In Email verification: ", email);
   if (!email || !code) {
     return res.status(400).json({ message: "Email and code are required" });
   }
@@ -136,6 +137,7 @@ const emailVerification = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = generateTokens(user);
 
   res.cookie("jwt", refreshToken, cookieOptions);
+  console.log("Email verify Success: ", accessToken);
 
   res.json({ accessToken, message: "Email verified successfully" });
 });
@@ -385,8 +387,7 @@ const logout = (req, res) => {
   res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
   res.json({ message: "Cookie cleared" });
 };
-
-module.exports = {
+const generateRefreshTokenIfNeeded = (module.exports = {
   emailRegister,
   emailLogin,
   emailVerification,
@@ -400,4 +401,4 @@ module.exports = {
   refresh,
   logout,
   socialLogin,
-};
+});
