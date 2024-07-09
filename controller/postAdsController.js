@@ -154,8 +154,8 @@ const postAd = async (req, res) => {
         imageUrl: photoUrls,
         contactName: name,
         contactEmail: email,
-        contactPhoneNumber: phoneNumber,
-        hidePhoneNumber,
+        contactPhone: phoneNumber,
+        hidePhone: hidePhoneNumber,
         isApproved: false,
         userId,
       });
