@@ -329,17 +329,19 @@ const refresh = asyncHandler(async (req, res) => {
       const foundUser = await User.findOne({ where: { id: decoded.id } });
       if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
-      const accessToken = jwt.sign(
-        {
-          UserInfo: {
-            userId: foundUser.id,
-            username: foundUser.name,
-            role: foundUser.role,
-          },
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "15m" }
-      );
+      // const accessToken = jwt.sign(
+      //   {
+      //     UserInfo: {
+      //       userId: foundUser.id,
+      //       username: foundUser.name,
+      //       role: foundUser.role,
+      //     },
+      //   },
+      //   process.env.ACCESS_TOKEN_SECRET,
+      //   { expiresIn: "15m" }
+      // );
+      console.log("Found User: ", foundUser);
+      const { accessToken } = generateTokens(foundUser);
       console.log("In Refresh Access Token: ", accessToken);
       res.json({ accessToken });
     }
@@ -348,13 +350,16 @@ const refresh = asyncHandler(async (req, res) => {
 
 const socialLogin = async (req, res) => {
   const { name, email } = req.body;
+
   if (!name || !email) {
     return res.status(400).json({ message: "All fields are required" });
   }
+
   try {
     let user = await User.findOne({ where: { email } });
+
     if (!user) {
-      let newUser = await User.create({
+      user = await User.create({
         name,
         email,
         status: "active",
@@ -370,11 +375,8 @@ const socialLogin = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     };
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
-    console.log("Cookie Options: ", cookieOptions);
-    console.log("Refresh Token: ", refreshToken);
-    console.log("Access Token: ", accessToken);
-    res.json({ accessToken, message: "User logged in successfully" });
+    res.cookie("jwt", refreshToken, cookieOptions);
+    res.json({ accessToken });
   } catch (error) {
     console.error("Social login error:", error);
     res.status(500).json({ message: "Internal server error" });

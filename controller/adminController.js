@@ -1,13 +1,15 @@
 const { CarAds, User } = require("../models");
 
 const getUsers = async (req, res) => {
-  //   const { page, size } = req.query;
   try {
-    const users = await User.findAll({
-      //   limit: size,
-      //   offset: page * size,
-    });
-    // console.log("Users", users);
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const users = await User.findAll();
+    console.log("Users", users);
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,9 +18,15 @@ const getUsers = async (req, res) => {
 
 const getPendings = async (req, res) => {
   try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const pendings = await CarAds.findAll({
       where: {
-        adminId: null,
+        isApproved: false,
       },
     });
     console.log("Pendings", pendings);
@@ -30,11 +38,17 @@ const getPendings = async (req, res) => {
 
 const getApprovedAds = async (req, res) => {
   try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     console.log("Get Approved Ads");
     const { Op } = require("sequelize");
     const approvedAds = await CarAds.findAll({
       where: {
-        adminId: { [Op.not]: null },
+        isApproved: true,
       },
     });
     console.log("Approved Ads", approvedAds);
@@ -64,8 +78,97 @@ const getApprovedAds = async (req, res) => {
   }
 };
 
+const deleteUserAds = async (req, res) => {
+  const { id } = req.body;
+  try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const ad = await CarAds.findByPk(id);
+    // if (ad.userId !== req.id) {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
+    await ad.destroy();
+    res.json({ message: "Ad deleted successfully" });
+  } catch (error) {
+    console.error("Failed to delete ad:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const changeUserRole = async (req, res) => {
+  const { id, role } = req.body;
+  console.log("id", id);
+  console.log("role", role);
+  console.log("req.roles", req.roles);
+  try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.role = role;
+    await user.save();
+    res.json({ message: "User role updated successfully" });
+  } catch (error) {
+    console.error("Failed to update user role:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  const { id } = req.body;
+  try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await user.destroy();
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Failed to delete user:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const approveAds = async (req, res) => {
+  const { id } = req.body;
+  try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const ad = await CarAds.findByPk(id);
+    if (!ad) {
+      return res.status(404).json({ message: "Ad not found" });
+    }
+    ad.isApproved = true;
+    await ad.save();
+    res.json({ message: "Ad approved successfully" });
+  } catch (error) {
+    console.error("Failed to approve ad:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getUsers,
   getPendings,
   getApprovedAds,
+  deleteUserAds,
+  changeUserRole,
+  deleteUser,
+  approveAds,
 };
