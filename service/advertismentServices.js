@@ -39,6 +39,7 @@ const buildWhereCondition = (filter) => {
     whereCondition.capacity = {
       [sequelize.Op.between]: [filter.capacity.min, filter.capacity.max],
     };
+    whereCondition.isApproved = true;
   }
 
   return whereCondition;
@@ -90,6 +91,7 @@ const getBrands = async (page, size) => {
   try {
     const { limit, offset } = getPagination(page, size);
     const data = await models.CarAds.findAndCountAll({
+      where: { isApproved: true },
       limit,
       offset,
       attributes: [
@@ -139,7 +141,7 @@ const getFloatingData = async (brand, model, year) => {
       });
     }
     const data = await models.CarAds.findAll({
-      where: { brand: brand, model: model, year: year },
+      where: { brand: brand, model: model, year: year, isApproved: true },
     });
 
     // Calculate average price using Array.reduce and arrow function
@@ -154,7 +156,7 @@ const getMarketData = async (filter) => {
 
   try {
     const data = await models.CarAds.findAndCountAll({
-      where: filter,
+      where: { isApproved: true, ...filter },
     });
 
     const totalCars = data.count;

@@ -9,6 +9,7 @@ const {
   deleteUserAds,
   changeUserRole,
   deleteUser,
+  approveAds,
 } = require("../controller/adminController");
 
 router.get("/users/data", verifyJWT, getUsers);
@@ -17,5 +18,6 @@ router.get("/approved/data", verifyJWT, getApprovedAds);
 router.delete("/deleteUserAds", verifyJWT, deleteUserAds);
 router.post("/change-user-status", verifyJWT, changeUserRole);
 router.delete("/deleteUser", verifyJWT, deleteUser);
+router.post("/approve-ad", verifyJWT, approveAds);
 
 module.exports = router;

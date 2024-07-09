@@ -141,6 +141,28 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const approveAds = async (req, res) => {
+  const { id } = req.body;
+  try {
+    isAdmin = req.roles === "admin" ? req.roles : null;
+    console.log("isAdmin", isAdmin);
+    if (isAdmin !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const ad = await CarAds.findByPk(id);
+    if (!ad) {
+      return res.status(404).json({ message: "Ad not found" });
+    }
+    ad.isApproved = true;
+    await ad.save();
+    res.json({ message: "Ad approved successfully" });
+  } catch (error) {
+    console.error("Failed to approve ad:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getUsers,
   getPendings,
@@ -148,4 +170,5 @@ module.exports = {
   deleteUserAds,
   changeUserRole,
   deleteUser,
+  approveAds,
 };
