@@ -159,7 +159,7 @@ const activationTemplate = (code, name) =>
 													<table class="heading_block block-2" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #1aa19c; direction: ltr; font-family: Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif; font-size: 38px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 45.6px;"><span class="tinyMce-placeholder" style="word-break: break-word;">Welcome to CarSeek!</span></h1>
+																<h1 style="margin: 0; color: #1aa19c; direction: ltr; font-family: Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif; font-size: 38px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 45.6px;"><span class="tinyMce-placeholder" style="word-break: break-word;">Welcome to MotorCycle.lk!</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -235,7 +235,7 @@ const activationTemplate = (code, name) =>
 														<tr>
 															<td class="pad" style="padding-bottom:10px;padding-left:40px;padding-right:40px;padding-top:10px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:13px;line-height:150%;text-align:center;mso-line-height-alt:19.5px;">
-																	<p style="margin: 0; word-break: break-word;">Thank you for registering with CarSeek. To complete your registration, please use the verification code provided below within the next 5 minutes</p>
+																	<p style="margin: 0; word-break: break-word;">Thank you for registering with MotorCycle.lk. To complete your registration, please use the verification code provided below within the next 5 minutes</p>
 																</div>
 															</td>
 														</tr>
@@ -372,7 +372,7 @@ const activationTemplate = (code, name) =>
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Visit our site on :<a href="http://www.carseek.live" target="_blank" style="text-decoration: underline; color: #218f9e;" rel="noopener"><strong> carseek.live</strong></a></p>
+																	<p style="margin: 0;">Visit our site on :<a href="http://www.MotorCycle.lk.live" target="_blank" style="text-decoration: underline; color: #218f9e;" rel="noopener"><strong> MotorCycle.lk.live</strong></a></p>
 																</div>
 															</td>
 														</tr>
@@ -407,7 +407,7 @@ const activationTemplate = (code, name) =>
 														<tr>
 															<td class="pad" style="padding-bottom:10px;padding-left:40px;padding-right:40px;padding-top:15px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:12px;line-height:150%;text-align:center;mso-line-height-alt:18px;">
-																	<p style="margin: 0; word-break: break-word;">Please enter above code in the required field on our website to verify your email address.<br><br>If you did not initiate this request, please ignore this email or contact our support team.<br><br>Thank you for choosing CarSeek<br><br><br>Best regards,<br>The CarSeek Team</p>
+																	<p style="margin: 0; word-break: break-word;">Please enter above code in the required field on our website to verify your email address.<br><br>If you did not initiate this request, please ignore this email or contact our support team.<br><br>Thank you for choosing MotorCycle.lk<br><br><br>Best regards,<br>The MotorCycle.lk Team</p>
 																</div>
 															</td>
 														</tr>
@@ -429,7 +429,7 @@ const activationTemplate = (code, name) =>
 														<tr>
 															<td class="pad" style="padding-bottom:30px;padding-left:40px;padding-right:40px;padding-top:20px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:12px;line-height:120%;text-align:left;mso-line-height-alt:14.399999999999999px;">
-																	<p style="margin: 0; word-break: break-word;"><span style="word-break: break-word; color: #95979c;">CarSeek Copyright © 2024</span></p>
+																	<p style="margin: 0; word-break: break-word;"><span style="word-break: break-word; color: #95979c;">MotorCycle.lk Copyright © 2024</span></p>
 																</div>
 															</td>
 														</tr>

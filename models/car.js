@@ -27,7 +27,16 @@ module.exports = (sequelize, DataTypes) => {
       location: DataTypes.STRING,
       mileage: DataTypes.FLOAT,
       fuelType: DataTypes.STRING,
-      imageUrl: DataTypes.ARRAY(DataTypes.STRING),
+      imageUrl: {
+        type: DataTypes.TEXT,
+        get() {
+          const value = this.getDataValue("imageUrl");
+          return value ? JSON.parse(value) : [];
+        },
+        set(value) {
+          this.setDataValue("imageUrl", JSON.stringify(value));
+        },
+      },
       postUrl: DataTypes.STRING,
       postedDate: DataTypes.DATE,
       transmission: DataTypes.STRING,

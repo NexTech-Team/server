@@ -162,7 +162,7 @@ const resetPasswordTemplate = (url, name) => `<!DOCTYPE html>
 													<table class="heading_block block-2" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #6c6de1; direction: ltr; font-family: Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif; font-size: 38px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 45.6px;"><span class="tinyMce-placeholder" style="word-break: break-word;">CarSeek Password Reset!</span></h1>
+																<h1 style="margin: 0; color: #6c6de1; direction: ltr; font-family: Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif; font-size: 38px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 45.6px;"><span class="tinyMce-placeholder" style="word-break: break-word;">MotorCycle.lk Password Reset!</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -314,7 +314,7 @@ const resetPasswordTemplate = (url, name) => `<!DOCTYPE html>
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Your carseek password can be reset by clicking the above.</p>
+																	<p style="margin: 0;">Your MotorCycle.lk password can be reset by clicking the above.</p>
 																</div>
 															</td>
 														</tr>
@@ -365,7 +365,7 @@ const resetPasswordTemplate = (url, name) => `<!DOCTYPE html>
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Visit our site on :<a href="http://www.carseek.live" target="_blank" style="text-decoration: underline; color: #218f9e;" rel="noopener"><strong> carseek.live</strong></a></p>
+																	<p style="margin: 0;">Visit our site on :<a href="http://www.MotorCycle.lk.live" target="_blank" style="text-decoration: underline; color: #218f9e;" rel="noopener"><strong> MotorCycle.lk.live</strong></a></p>
 																</div>
 															</td>
 														</tr>
@@ -400,7 +400,7 @@ const resetPasswordTemplate = (url, name) => `<!DOCTYPE html>
 														<tr>
 															<td class="pad" style="padding-bottom:10px;padding-left:40px;padding-right:40px;padding-top:15px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:12px;line-height:150%;text-align:center;mso-line-height-alt:18px;">
-																	<p style="margin: 0; word-break: break-word;"><br>If you did not initiate this request, please ignore this email or contact our support team.<br><br>Thank you for choosing CarSeek<br><br><br>Best regards,<br>The CarSeek Team</p>
+																	<p style="margin: 0; word-break: break-word;"><br>If you did not initiate this request, please ignore this email or contact our support team.<br><br>Thank you for choosing MotorCycle.lk<br><br><br>Best regards,<br>The MotorCycle.lk Team</p>
 																</div>
 															</td>
 														</tr>
@@ -422,7 +422,7 @@ const resetPasswordTemplate = (url, name) => `<!DOCTYPE html>
 														<tr>
 															<td class="pad" style="padding-bottom:30px;padding-left:40px;padding-right:40px;padding-top:20px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:12px;line-height:120%;text-align:left;mso-line-height-alt:14.399999999999999px;">
-																	<p style="margin: 0; word-break: break-word;"><span style="word-break: break-word; color: #95979c;">CarSeek Copyright © 2024</span></p>
+																	<p style="margin: 0; word-break: break-word;"><span style="word-break: break-word; color: #95979c;">MotorCycle.lk Copyright © 2024</span></p>
 																</div>
 															</td>
 														</tr>

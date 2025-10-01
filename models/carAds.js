@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       location: DataTypes.STRING,
       mileage: DataTypes.FLOAT,
       fuelType: DataTypes.STRING,
-      imageUrl: DataTypes.JSON, // Use JSON to store array of strings
+      imageUrl: DataTypes.TEXT, // Use TEXT to store array of strings
       postUrl: DataTypes.STRING,
       postedDate: DataTypes.DATE,
       transmission: DataTypes.STRING,

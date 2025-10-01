@@ -5,10 +5,7 @@ const { User } = require("../models");
 const sendEmail = require("../utils/sendEmail");
 const { sendSMS } = require("../utils/sendSMS");
 const redisClient = require("../utils/redisClient");
-const dotenv = require("dotenv");
 const asyncHandler = require("express-async-handler");
-
-dotenv.config();
 
 // Cookie settings for different environments
 const cookieOptions = {

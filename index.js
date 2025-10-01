@@ -23,11 +23,14 @@ const adminRouter = require("./routes/adminRoute");
 const { sequelize } = require("./models");
 
 // Parse ALLOWED_ORIGINS environment variable
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["https://www.carseek.live"];
+const allowedOrigins = ["http://localhost:3000", "https://www.MotorCycle.lk"];
 
 console.log("Allowed origins:", allowedOrigins);
+
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 
 app.use(
   cors({

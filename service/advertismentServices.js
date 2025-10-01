@@ -1,7 +1,7 @@
 const models = require("../models");
 const sequelize = require("sequelize");
 const { getPagination, getPagingData } = require("../utils/pagination");
-const { CarAds } = require("../models");
+const { MotorcycleAds } = require("../models");
 const buildWhereCondition = (filter) => {
   const whereCondition = {};
 
@@ -48,7 +48,7 @@ const buildWhereCondition = (filter) => {
 const getAdvertismentById = async (id) => {
   console.log("Get advertisement by ID:", id);
   try {
-    const data = await models.CarAds.findOne({
+    const data = await models.MotorcycleAds.findOne({
       where: { id: id },
     });
     console.log("Get advertisement Data:", data);
@@ -58,7 +58,7 @@ const getAdvertismentById = async (id) => {
   }
 };
 
-const getAllCars = async (page, size, filter, sortFilter) => {
+const getAllMotorcycles = async (page, size, filter, sortFilter) => {
   console.log("getAll Filter:", filter);
   console.log("Sort Filter:", sortFilter);
   try {
@@ -71,7 +71,7 @@ const getAllCars = async (page, size, filter, sortFilter) => {
       ? [[sortFilter.field, sortFilter.order]]
       : [["updatedAt", "DESC"]];
 
-    const data = await models.CarAds.findAndCountAll({
+    const data = await models.MotorcycleAds.findAndCountAll({
       where: whereCondition,
       order,
       limit,
@@ -90,7 +90,7 @@ const getAllCars = async (page, size, filter, sortFilter) => {
 const getBrands = async (page, size) => {
   try {
     const { limit, offset } = getPagination(page, size);
-    const data = await models.CarAds.findAndCountAll({
+    const data = await models.MotorcycleAds.findAndCountAll({
       where: { isApproved: true },
       limit,
       offset,
@@ -101,7 +101,22 @@ const getBrands = async (page, size) => {
       group: ["brand"],
       order: [[sequelize.literal("count"), "DESC"]],
     });
-    return getPagingData(data, page, limit);
+
+    console.log("Raw data from getBrands:", JSON.stringify(data, null, 2));
+
+    // When using group, findAndCountAll returns an array of objects in `count`.
+    // The actual total count is the length of this array.
+    const formattedData = {
+      count: data.count.length,
+      rows: data.rows,
+    };
+
+    console.log(
+      "Formatted data in getBrands:",
+      JSON.stringify(formattedData, null, 2)
+    );
+
+    return getPagingData(formattedData, page, limit);
   } catch (error) {
     throw new Error(error.message);
   }
@@ -113,7 +128,7 @@ const getModels = async (page, size, filter) => {
     const { limit, offset } = getPagination(page, size);
     const whereCondition = buildWhereCondition(filter);
 
-    const data = await models.CarAds.findAndCountAll({
+    const data = await models.MotorcycleAds.findAndCountAll({
       where: whereCondition,
       limit,
       offset,
@@ -140,7 +155,7 @@ const getFloatingData = async (brand, model, year) => {
         message: "Missing parameters: brand, model, and year are required.",
       });
     }
-    const data = await models.CarAds.findAll({
+    const data = await models.MotorcycleAds.findAll({
       where: { brand: brand, model: model, year: year, isApproved: true },
     });
 
@@ -155,7 +170,7 @@ const getMarketData = async (filter) => {
   console.log("Market Data Filter:", filter);
 
   try {
-    const data = await models.CarAds.findAndCountAll({
+    const data = await models.MotorcycleAds.findAndCountAll({
       where: { isApproved: true, ...filter },
     });
 
@@ -178,7 +193,7 @@ const getMarketData = async (filter) => {
 };
 
 module.exports = {
-  getAllCars,
+  getAllMotorcycles,
   getBrands,
   getModels,
   getFloatingData,

@@ -5,7 +5,7 @@ const sendSms = async () => {
   const token = "93|ePMU3jHjIdIIvXktgJ6hUX5jJCJJew1C1KBHu6EM ";
   const data = {
     recipient: "94773000961",
-    sender_id: "CarSeek",
+    sender_id: "MotorCycle.lk",
     type: "plain",
     message: "This is a test message",
     // schedule_time: '2021-12-20 07:00'
